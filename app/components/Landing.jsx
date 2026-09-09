@@ -76,7 +76,7 @@ function Hero() {
       <div>
         <div style={pill}>
           <span style={{ width: 7, height: 7, borderRadius: 99, background: T.mint, display: "inline-block" }} />
-          7,9% (mín. R$2,90) por ingresso — sem surpresa no fim do mês
+          5,9% + processamento a custo — sem taxa escondida
         </div>
         <h1
           style={{
@@ -98,7 +98,7 @@ function Hero() {
           </a>
         </div>
         <div style={{ display: "flex", gap: 28, marginTop: 38 }}>
-          <Stat n="7,9%" l="(mín. R$2,90) por ingresso" />
+          <Stat n="5,9%" l="+ processamento a custo" />
           <Stat n="24h" l="para o repasse cair" />
           <Stat n="0%" l="em eventos gratuitos" />
         </div>
@@ -121,7 +121,8 @@ function Stat({ n, l }) {
 function TicketMock() {
   const [qty, setQty] = useState(2);
   const price = 150;
-  const fee = Math.max(price * 0.079, 2.90);
+  const fee = Math.max(price * 0.059, 1.50);
+  const proc = Math.max(price * 0.0099, 1.00); // Pix processing at cost
   return (
     <div style={{ position: "relative" }}>
       <div
@@ -150,11 +151,12 @@ function TicketMock() {
           </div>
           <div style={{ height: 1, background: T.line, margin: "18px 0" }} />
           <Row k={`${qty} × ingresso`} v={BRL(price * qty)} />
-          <Row k={`Taxa de serviço (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
+          <Row k={`Taxa de serviço — 5,9% (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
+          <Row k={`Processamento Pix (${qty} × ${BRL(proc)})`} v={BRL(proc * qty)} sub />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 14 }}>
             <span style={{ fontWeight: 600, fontSize: 15 }}>Total</span>
             <span style={{ fontFamily: fontDisplay, fontSize: 26, fontWeight: 700, color: T.ink }}>
-              {BRL(price * qty + fee * qty)}
+              {BRL(price * qty + fee * qty + proc * qty)}
             </span>
           </div>
           <button style={{ ...btn.solid, width: "100%", marginTop: 18, padding: "15px", fontSize: 16, justifyContent: "center" }}>
@@ -411,25 +413,33 @@ function Calculator() {
   const [events, setEvents] = useState(6);
   const [absorb, setAbsorb] = useState("comprador"); // quem paga a taxa
 
-  const SVC_PCT = 0.079;
-  const SVC_MIN = 2.90;
-  const PCT_COMPET = 0.1; // 10% referência mercado
-  const COMPET_MIN = 3.99;
+  const SVC_PCT = 0.059;
+  const SVC_MIN = 1.50;
+  // Gateway costs (Asaas, repassed at cost, no markup)
+  const PIX_PCT = 0.0099;
+  const PIX_MIN = 1.00;
+  const CARD_PCT = 0.0349;
+  const CARD_FIX = 0.49;
+  const MIX_CARD = 0.40; // 40% cartão, 60% Pix
+  const MIX_PIX = 0.60;
+  const PCT_COMPET = 0.079; // 7,9% e-inscrição (gateway embutido)
+  const COMPET_MIN = 1.90;
 
   const m = useMemo(() => {
-    const feeUnit = Math.max(ticket * SVC_PCT, SVC_MIN);
-    const feeEvent = feeUnit * qty;
-    const feeYear = feeEvent * events;
+    const svcUnit = Math.max(ticket * SVC_PCT, SVC_MIN);
+    const gwUnit = MIX_PIX * Math.max(ticket * PIX_PCT, PIX_MIN) + MIX_CARD * (ticket * CARD_PCT + CARD_FIX);
+    const totalUnit = svcUnit + gwUnit;
+
+    const svcYear = svcUnit * qty * events;
+    const gwYear = gwUnit * qty * events;
+    const totalYear = totalUnit * qty * events;
 
     const compUnit = Math.max(ticket * PCT_COMPET, COMPET_MIN);
     const compYear = compUnit * qty * events;
 
     const gmvYear = ticket * qty * events;
-    const saving = compYear - feeYear;
-
-    const orgNetYear =
-      absorb === "comprador" ? gmvYear : gmvYear - feeYear; // se organizador absorve, desconta
-    return { feeUnit, feeEvent, feeYear, compYear, gmvYear, saving, orgNetYear, compUnit };
+    const orgNetYear = absorb === "comprador" ? gmvYear : gmvYear - svcYear;
+    return { svcUnit, gwUnit, totalUnit, svcYear, gwYear, totalYear, compUnit, compYear, gmvYear, orgNetYear };
   }, [ticket, qty, events, absorb]);
 
   return (
@@ -440,10 +450,10 @@ function Calculator() {
             Calculadora de taxa
           </div>
           <h2 style={{ fontFamily: fontDisplay, fontSize: "clamp(30px,4.5vw,46px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05, margin: 0 }}>
-            Veja o quanto você deixa de perder num ano.
+            Veja exatamente o que você paga — antes de publicar.
           </h2>
           <p style={{ fontSize: 17, color: "#C7BDE8", marginTop: 16, lineHeight: 1.55 }}>
-            Compare os 7,9% (mín. R$2,90) da Ingressa com os 10% que a maioria cobra por ingresso. Ajuste para o seu evento.
+            5,9% de serviço + processamento a custo real, separados. Compare com os 7,9% que o concorrente cobra com gateway embutido.
           </p>
         </div>
 
@@ -474,19 +484,19 @@ function Calculator() {
           {/* results */}
           <div>
             <div style={{ background: T.mint, borderRadius: 20, padding: "clamp(22px,3vw,32px)", color: T.ink }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: T.mintDk }}>Você economiza por ano</div>
-              <div style={{ fontFamily: fontDisplay, fontSize: "clamp(38px,6vw,58px)", fontWeight: 700, letterSpacing: "-0.03em", lineHeight: 1, margin: "6px 0 4px" }}>
-                {BRL(m.saving)}
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.mintDk }}>O nosso diferencial</div>
+              <div style={{ fontFamily: fontDisplay, fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 10px" }}>
+                Você vê cada centavo antes de publicar
               </div>
               <div style={{ fontSize: 14.5, color: T.ink2 }}>
-                comparado a uma plataforma que cobra 10% por ingresso
+                5,9% de serviço + processamento a custo real — separados, auditáveis, sem embutir na taxa.
               </div>
             </div>
 
             <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(22px,3vw,32px)", marginTop: 16, border: "1px solid rgba(255,255,255,0.1)" }}>
-              <ResRow k="Taxa por ingresso" a={BRL(m.feeUnit)} b={`${BRL(m.compUnit)} (mín. 10%)`} />
-              <ResRow k="Taxa total por evento" a={BRL(m.feeEvent)} b={BRL(m.compYear/events)} />
-              <ResRow k="Taxa total no ano" a={BRL(m.feeYear)} b={BRL(m.compYear)} big />
+              <ResRow k="Serviço Ingressa (5,9%)" a={BRL(m.svcUnit)} b={`${BRL(m.compUnit)} tudo junto`} />
+              <ResRow k="Processamento (custo real)" a={BRL(m.gwUnit)} b="embutido" />
+              <ResRow k="Total por ingresso" a={BRL(m.totalUnit)} b={BRL(m.compUnit)} big />
               <div style={{ height:1, background:"rgba(255,255,255,0.12)", margin:"16px 0" }}/>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
                 <span style={{ fontSize:14.5, color:"#C7BDE8" }}>
@@ -538,9 +548,9 @@ function Slider({ label, value, min, max, step, onChange, fmt }) {
 // ---------- Plans ----------
 function PlansStrip() {
   const plans = [
-    { name: "Avulso", price: "7,9%", unit: "+ mín. R$2,90/ingresso", desc: "Para quem faz um evento por vez. Sem mensalidade; a taxa acompanha o valor do ingresso.", feats: ["Repasse em 24h", "Check-in por QR Code", "Pix, cartão e boleto", "Custo de processamento transparente"], cta: "Criar evento", hot: false },
-    { name: "Recorrente", price: "R$149", unit: "/mês + R$0,90/ingresso", desc: "Para organizadores com vários eventos no ano. Taxa por ingresso muito menor; ideal a partir de ~4 eventos/ano.", feats: ["Taxa reduzida R$0,90/ingresso", "Processamento repassado à parte", "Antecipação de repasse", "Página de organizador", "Suporte prioritário"], cta: "Falar com vendas", hot: true },
-    { name: "Pacote", price: "a partir de R$0,99", unit: "/ingresso, pré-pago", desc: "Compre um lote de inscrições com desconto por volume. Quanto maior o pacote, menor o preço unitário.", feats: ["De R$1,90 (200) a R$0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento repassado à parte", "Melhor para alto volume"], cta: "Ver pacotes", hot: false },
+    { name: "Avulso", price: "5,9%", unit: "+ processamento a custo", desc: "Sem mensalidade. Você paga 5,9% de serviço mais o custo real do Pix ou cartão, sem markup. Tudo visível antes de publicar.", feats: ["Processamento a preço de custo", "Repasse em 24h", "Check-in por QR Code", "Sem taxa escondida"], cta: "Criar evento", hot: false },
+    { name: "Recorrente", price: "R$149", unit: "/mês + 3,9% serviço", desc: "Para quem faz vários eventos no ano. Taxa de serviço reduzida; processamento sempre repassado a custo.", feats: ["Serviço reduzido a 3,9%", "Processamento a custo", "Antecipação de repasse", "Página de organizador", "Suporte prioritário"], cta: "Falar com vendas", hot: true },
+    { name: "Pacote", price: "a partir de R$0,99", unit: "/ingresso, pré-pago", desc: "Lote de inscrições com desconto por volume. Processamento repassado a custo à parte.", feats: ["De R$1,90 (200) a R$0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento a custo", "Melhor para alto volume"], cta: "Ver pacotes", hot: false },
   ];
   return (
     <section style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
