@@ -76,7 +76,7 @@ function Hero() {
       <div>
         <div style={pill}>
           <span style={{ width: 7, height: 7, borderRadius: 99, background: T.mint, display: "inline-block" }} />
-          Taxa fixa por ingresso — sem % que cresce sem parar
+          7,9% (mín. R$2,90) por ingresso — sem surpresa no fim do mês
         </div>
         <h1
           style={{
@@ -98,7 +98,7 @@ function Hero() {
           </a>
         </div>
         <div style={{ display: "flex", gap: 28, marginTop: 38 }}>
-          <Stat n="R$ 1,90" l="por ingresso, fixo" />
+          <Stat n="7,9%" l="(mín. R$2,90) por ingresso" />
           <Stat n="24h" l="para o repasse cair" />
           <Stat n="0%" l="em eventos gratuitos" />
         </div>
@@ -121,7 +121,7 @@ function Stat({ n, l }) {
 function TicketMock() {
   const [qty, setQty] = useState(2);
   const price = 150;
-  const fee = 1.9;
+  const fee = Math.max(price * 0.079, 2.90);
   return (
     <div style={{ position: "relative" }}>
       <div
@@ -150,7 +150,7 @@ function TicketMock() {
           </div>
           <div style={{ height: 1, background: T.line, margin: "18px 0" }} />
           <Row k={`${qty} × ingresso`} v={BRL(price * qty)} />
-          <Row k={`Taxa de serviço (${qty} × R$ 1,90)`} v={BRL(fee * qty)} sub />
+          <Row k={`Taxa de serviço (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 14 }}>
             <span style={{ fontWeight: 600, fontSize: 15 }}>Total</span>
             <span style={{ fontFamily: fontDisplay, fontSize: 26, fontWeight: 700, color: T.ink }}>
@@ -411,12 +411,13 @@ function Calculator() {
   const [events, setEvents] = useState(6);
   const [absorb, setAbsorb] = useState("comprador"); // quem paga a taxa
 
-  const FIX = 1.9;
+  const SVC_PCT = 0.079;
+  const SVC_MIN = 2.90;
   const PCT_COMPET = 0.1; // 10% referência mercado
   const COMPET_MIN = 3.99;
 
   const m = useMemo(() => {
-    const feeUnit = FIX;
+    const feeUnit = Math.max(ticket * SVC_PCT, SVC_MIN);
     const feeEvent = feeUnit * qty;
     const feeYear = feeEvent * events;
 
@@ -442,7 +443,7 @@ function Calculator() {
             Veja o quanto você deixa de perder num ano.
           </h2>
           <p style={{ fontSize: 17, color: "#C7BDE8", marginTop: 16, lineHeight: 1.55 }}>
-            Compare a taxa fixa da Ingressa com os 10% que a maioria cobra por ingresso. Ajuste para o seu evento.
+            Compare os 7,9% (mín. R$2,90) da Ingressa com os 10% que a maioria cobra por ingresso. Ajuste para o seu evento.
           </p>
         </div>
 
@@ -537,9 +538,9 @@ function Slider({ label, value, min, max, step, onChange, fmt }) {
 // ---------- Plans ----------
 function PlansStrip() {
   const plans = [
-    { name: "Avulso", price: "R$ 1,90", unit: "/ingresso", desc: "Para quem faz um evento por vez. Zero mensalidade, taxa fixa por inscrição.", feats: ["Repasse em 24h", "Check-in por QR Code", "Pix, cartão e boleto"], cta: "Criar evento", hot: false },
-    { name: "Recorrente", price: "R$ 149", unit: "/mês", desc: "Para organizadores com vários eventos no ano. Taxa por ingresso menor e relatórios.", feats: ["Taxa reduzida R$ 0,90/ingresso", "Página de organizador", "Antecipação de repasse", "Suporte prioritário"], cta: "Falar com vendas", hot: true },
-    { name: "Comunidade", price: "R$ 0", unit: "/gratuito", desc: "Eventos sem cobrança de ingresso não pagam nada. Só inscrição e controle de presença.", feats: ["Inscrições ilimitadas", "Lista de presença", "Certificados"], cta: "Começar grátis", hot: false },
+    { name: "Avulso", price: "7,9%", unit: "+ mín. R$2,90/ingresso", desc: "Para quem faz um evento por vez. Sem mensalidade; a taxa acompanha o valor do ingresso.", feats: ["Repasse em 24h", "Check-in por QR Code", "Pix, cartão e boleto", "Custo de processamento transparente"], cta: "Criar evento", hot: false },
+    { name: "Recorrente", price: "R$149", unit: "/mês + R$0,90/ingresso", desc: "Para organizadores com vários eventos no ano. Taxa por ingresso muito menor; ideal a partir de ~4 eventos/ano.", feats: ["Taxa reduzida R$0,90/ingresso", "Processamento repassado à parte", "Antecipação de repasse", "Página de organizador", "Suporte prioritário"], cta: "Falar com vendas", hot: true },
+    { name: "Pacote", price: "a partir de R$0,99", unit: "/ingresso, pré-pago", desc: "Compre um lote de inscrições com desconto por volume. Quanto maior o pacote, menor o preço unitário.", feats: ["De R$1,90 (200) a R$0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento repassado à parte", "Melhor para alto volume"], cta: "Ver pacotes", hot: false },
   ];
   return (
     <section style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
