@@ -18,6 +18,7 @@ export default function Landing() {
       <BuyFlow />
       <Calculator />
       <PlansStrip />
+      <Waitlist />
       <Footer />
     </div>
   );
@@ -40,13 +41,13 @@ function Nav() {
         </span>
       </div>
       <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
-        {["Como funciona", "Para organizadores", "Preços"].map((x) => (
-          <a key={x} href="#" style={{ color: T.ink2, textDecoration: "none", fontSize: 15, fontWeight: 500 }}>
+        {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"]].map(([x, href]) => (
+          <a key={x} href={href} style={{ color: T.ink2, textDecoration: "none", fontSize: 15, fontWeight: 500 }}>
             {x}
           </a>
         ))}
-        <button style={btn.ghost}>Entrar</button>
-        <button style={btn.solid}>Criar evento</button>
+        <a href="#lista-espera" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
+        <a href="#lista-espera" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
       </nav>
     </header>
   );
@@ -92,7 +93,7 @@ function Hero() {
           e uma taxa que você entende de cabeça. Sem surpresa no fim do mês.
         </p>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <button style={{ ...btn.solid, padding: "15px 26px", fontSize: 16 }}>Criar meu evento</button>
+          <a href="#lista-espera" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
           <a href="#calc" style={{ ...btn.ghost, padding: "15px 26px", fontSize: 16, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             Calcular minha taxa
           </a>
@@ -214,8 +215,8 @@ function SocialProof() {
           display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16,
         }}
       >
-        <span style={{ fontSize: 14, color: T.muted }}>Já usado por organizadores de</span>
-        {["Igreja Vida Nova", "PUC Eventos", "Retiro Sal da Terra", "UniCon 2026", "Encontro Jovem SC"].map((x) => (
+        <span style={{ fontSize: 14, color: T.muted }}>Feito para</span>
+        {["Retiros e acampamentos", "Congressos e convenções", "Encontros de comunidade", "Eventos universitários", "Festivais e celebrações"].map((x) => (
           <span key={x} style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 500, color: T.ink2, opacity: 0.85 }}>
             {x}
           </span>
@@ -230,7 +231,7 @@ function BuyFlow() {
   const [step, setStep] = useState(0);
   const steps = ["Escolher ingresso", "Seus dados", "Pagamento Pix", "Confirmado"];
   return (
-    <section style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
+    <section id="como-funciona" style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
       <SectionHead
         kicker="O que seu público vê"
         title="Da escolha ao QR Code em quatro toques"
@@ -438,7 +439,7 @@ function Calculator() {
     const compYear = compUnit * qty * events;
 
     const gmvYear = ticket * qty * events;
-    const orgNetYear = absorb === "comprador" ? gmvYear : gmvYear - svcYear;
+    const orgNetYear = absorb === "comprador" ? gmvYear : (ticket - svcUnit - gwUnit) * qty * events;
     return { svcUnit, gwUnit, totalUnit, svcYear, gwYear, totalYear, compUnit, compYear, gmvYear, orgNetYear };
   }, [ticket, qty, events, absorb]);
 
@@ -496,18 +497,22 @@ function Calculator() {
             <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(22px,3vw,32px)", marginTop: 16, border: "1px solid rgba(255,255,255,0.1)" }}>
               <ResRow k="Serviço Ingressa (5,9%)" a={BRL(m.svcUnit)} b={`${BRL(m.compUnit)} tudo junto`} />
               <ResRow k="Processamento (custo real)" a={BRL(m.gwUnit)} b="embutido" />
-              <ResRow k="Total por ingresso" a={BRL(m.totalUnit)} b={BRL(m.compUnit)} big />
+              <div style={{ marginTop: 12, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <p style={{ fontSize: 13, color: "#8F84B5", lineHeight: 1.55, margin: 0 }}>
+                  No concorrente, os 7,9% cobrem serviço e gateway juntos — você nunca vê quanto é de cada.
+                </p>
+              </div>
               <div style={{ height:1, background:"rgba(255,255,255,0.12)", margin:"16px 0" }}/>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
                 <span style={{ fontSize:14.5, color:"#C7BDE8" }}>
-                  {absorb==="comprador" ? "Você recebe (100% do valor)" : "Você recebe (líquido de taxa)"}
+                  {absorb==="comprador" ? "Você recebe (100% do valor)" : "Você recebe (líquido das taxas)"}
                 </span>
                 <span style={{ fontFamily:fontDisplay, fontSize:24, fontWeight:700 }}>{BRL(m.orgNetYear)}</span>
               </div>
             </div>
-            <button style={{ ...btn.solid, background:T.coral, width:"100%", marginTop:16, padding:"15px", fontSize:16, justifyContent:"center" }}>
+            <a href="#lista-espera" style={{ ...btn.solid, background:T.coral, width:"100%", marginTop:16, padding:"15px", fontSize:16, justifyContent:"center", boxSizing:"border-box", textDecoration:"none", display:"flex" }}>
               Começar com esse cenário
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -553,7 +558,7 @@ function PlansStrip() {
     { name: "Pacote", price: "a partir de R$0,99", unit: "/ingresso, pré-pago", desc: "Lote de inscrições com desconto por volume. Processamento repassado a custo à parte.", feats: ["De R$1,90 (200) a R$0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento a custo", "Melhor para alto volume"], cta: "Ver pacotes", hot: false },
   ];
   return (
-    <section style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
+    <section id="precos" style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
       <SectionHead kicker="Preços" title="Escolha pela sua recorrência, não pela letra miúda" sub="Sem taxa de setup, sem fidelidade. Mude de plano quando seu calendário mudar." />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginTop: 40 }} className="plans">
         {plans.map((p) => (
@@ -577,9 +582,9 @@ function PlansStrip() {
                 </div>
               ))}
             </div>
-            <button style={{ ...(p.hot ? { ...btn.solid, background: T.coral } : btn.solidLight), width: "100%", justifyContent: "center", padding: "13px" }}>
+            <a href="#lista-espera" style={{ ...(p.hot ? { ...btn.solid, background: T.coral } : btn.solidLight), display: "block", width: "100%", boxSizing: "border-box", textAlign: "center", textDecoration: "none", padding: "13px" }}>
               {p.cta}
-            </button>
+            </a>
           </div>
         ))}
       </div>
@@ -595,6 +600,38 @@ function SectionHead({ kicker, title, sub }) {
       <h2 style={{ fontFamily: fontDisplay, fontSize: "clamp(28px,4vw,42px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.08, margin: 0 }}>{title}</h2>
       <p style={{ fontSize: 17, color: T.ink2, marginTop: 14, lineHeight: 1.55 }}>{sub}</p>
     </div>
+  );
+}
+
+// ---------- Waitlist ----------
+function Waitlist() {
+  return (
+    <section id="lista-espera" style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "clamp(48px,7vw,80px) clamp(20px,5vw,72px)", textAlign: "center" }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 12 }}>Lista de espera</div>
+        <h2 style={{ fontFamily: fontDisplay, fontSize: "clamp(26px,4vw,40px)", fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.08, margin: "0 0 14px" }}>
+          Seja avisado quando abrirmos
+        </h2>
+        <p style={{ fontSize: 16, color: T.ink2, lineHeight: 1.6, margin: "0 0 32px" }}>
+          A Ingressa está em desenvolvimento. Deixe seu e-mail e entraremos em contato assim que a plataforma estiver disponível.
+        </p>
+        <form
+          action="mailto:contato@ingressa.com.br"
+          method="get"
+          encType="text/plain"
+          style={{ display: "flex", gap: 10, maxWidth: 440, margin: "0 auto", flexWrap: "wrap", justifyContent: "center" }}
+        >
+          <input
+            type="email" name="body" placeholder="seu@email.com" required
+            style={{ flex: 1, minWidth: 220, height: 48, borderRadius: 11, border: `1px solid ${T.line}`, padding: "0 16px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: "#fff", outline: "none" }}
+          />
+          <button type="submit" style={{ ...btn.solid, padding: "0 24px", height: 48 }}>
+            Entrar na lista
+          </button>
+        </form>
+        <p style={{ fontSize: 13, color: T.muted, marginTop: 14 }}>Sem spam. Só um aviso quando abrirmos.</p>
+      </div>
+    </section>
   );
 }
 
