@@ -1,0 +1,37 @@
+/* Reset mínimo */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #FDFCFF;
+  color: #1A1035;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+
+/* Slider da calculadora (antes injetado via JS) */
+input[type=range]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 99px;
+  background: #fff;
+  border: 3px solid #FF5A5F;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 99px;
+  background: #fff;
+  border: 3px solid #FF5A5F;
+  cursor: pointer;
+}
+
+/* Responsivo (antes injetado via JS) */
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .flowcard { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .calcgrid { grid-template-columns: 1fr !important; }
+  .plans { grid-template-columns: 1fr !important; }
+  header nav a { display: none !important; }
+}
