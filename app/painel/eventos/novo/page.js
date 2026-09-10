@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { T } from "@/lib/tokens";
+import ImagemCapa from "../ImagemCapa";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -12,7 +13,7 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "" });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -84,6 +85,7 @@ export default function NovoEventoPage() {
         data_fim: form.data_fim,
         visibilidade: form.visibilidade,
         senha: form.senha || undefined,
+        imagem_url: form.imagem_url || null,
         lotes,
       }),
     });
@@ -116,6 +118,10 @@ export default function NovoEventoPage() {
           {/* Dados do evento */}
           <Secao titulo="Dados do evento">
             <Campo label="Título *" type="text" value={form.titulo} onChange={setF("titulo")} required />
+            <ImagemCapa
+              valorAtual={form.imagem_url}
+              onChange={(path) => setForm((f) => ({ ...f, imagem_url: path }))}
+            />
             <div style={{ marginBottom: 18 }}>
               <label style={labelStyle}>Descrição</label>
               <textarea

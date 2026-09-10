@@ -21,7 +21,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ erro: "Evento não está em modo editável." }, { status: 409 });
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, lotes_update, lotes_add, lotes_remove } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes_update, lotes_add, lotes_remove } = await request.json();
 
   // Atualiza campos do evento
   const upd = {};
@@ -33,6 +33,7 @@ export async function PATCH(request, { params }) {
   if (data_inicio) upd.data_inicio = data_inicio;
   if (data_fim !== undefined) upd.data_fim = data_fim || null;
   if (visibilidade) upd.visibilidade = visibilidade;
+  if (imagem_url !== undefined) upd.imagem_url = imagem_url; // null limpa a imagem
 
   if (visibilidade === "privado" && senha) {
     upd.senha_hash = await bcrypt.hash(senha, 12);

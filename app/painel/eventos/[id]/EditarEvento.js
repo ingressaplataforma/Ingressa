@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/tokens";
+import ImagemCapa from "../ImagemCapa";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -42,6 +43,7 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     data_fim: eventoInicial.data_fim ? eventoInicial.data_fim.slice(0, 16) : "",
     visibilidade: eventoInicial.visibilidade ?? "publico",
     senha: "",
+    imagem_url: eventoInicial.imagem_url ?? null,
   });
   const [buscandoCep, setBuscandoCep] = useState(false);
 
@@ -106,6 +108,7 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
       body: JSON.stringify({
         ...form,
         cep: form.cep,
+        imagem_url: form.imagem_url,
         senha: form.senha || undefined,
         lotes_update: lotesEdit.map((l) => ({ id: l.id, nome: l.nome, preco: l.preco, quantidade: l.quantidade_total })),
         lotes_add: lotesNovos.filter((l) => l.nome.trim()).map((l) => ({ nome: l.nome, preco: l.preco, quantidade: l.quantidade })),
@@ -146,6 +149,10 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
         <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "22px 24px", marginBottom: 16 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: T.muted, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Dados do evento</p>
           <Campo label="Título *" type="text" value={form.titulo} onChange={setF("titulo")} required />
+          <ImagemCapa
+            valorAtual={form.imagem_url}
+            onChange={(path) => setForm((f) => ({ ...f, imagem_url: path }))}
+          />
           <div style={{ marginBottom: 16 }}>
             <label style={labelStyle}>Descrição</label>
             <textarea

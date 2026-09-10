@@ -141,7 +141,7 @@ function Stat({ n, l }) {
 
 // Interactive ticket in hero — the product IS the purchase
 function TicketMock() {
-  const [qty, setQty] = useState(2);
+  const [qty, setQty] = useState(1);
   const price = 99;
   const fee = Math.max(price * 0.059, 1.50);
   const proc = Math.max(price * 0.0099, 1.00); // Pix processing at cost

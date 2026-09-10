@@ -1,0 +1,50 @@
+-- =============================================================
+-- Ingressa — Imagem de capa do evento
+-- Rodar no SQL Editor do Supabase APÓS scripts 001–006.
+-- =============================================================
+
+-- -----------------------------------------------------------
+-- 1. Coluna imagem_url na tabela evento
+--    Guarda o caminho (path) do arquivo no bucket 'eventos'
+--    do Supabase Storage, ex.: "uuid-org/1234567890.jpg".
+--    A URL pública é construída em código:
+--    SUPABASE_URL/storage/v1/object/public/eventos/{imagem_url}
+-- -----------------------------------------------------------
+ALTER TABLE public.evento
+  ADD COLUMN IF NOT EXISTS imagem_url TEXT;
+
+-- -----------------------------------------------------------
+-- 2. Passos manuais que o Ricardo faz no painel Supabase
+--
+-- A. Criar o bucket:
+--    1. Acesse Storage no painel do Supabase.
+--    2. Clique em "New bucket".
+--    3. Nome: eventos
+--    4. Marque "Public bucket" (leitura pública das capas).
+--    5. Clique em "Create bucket".
+--
+-- B. Políticas RLS do bucket (aba Policies do bucket):
+--
+--    Policy 1 — Leitura pública (qualquer visitante vê as capas):
+--      Nome: "Leitura publica das capas"
+--      Allowed operation: SELECT
+--      Target roles: (deixe vazio = todos, inclusive anon)
+--      USING: true
+--
+--    Policy 2 — Upload e update só pelo dono:
+--      Nome: "Organizador faz upload na pasta propria"
+--      Allowed operation: INSERT, UPDATE
+--      Target roles: authenticated
+--      USING: (storage.foldername(name))[1] = auth.uid()::text
+--
+--    Policy 3 — Delete só pelo dono:
+--      Nome: "Organizador apaga imagens proprias"
+--      Allowed operation: DELETE
+--      Target roles: authenticated
+--      USING: (storage.foldername(name))[1] = auth.uid()::text
+--
+--    Obs.: storage.foldername(name) retorna um array com cada
+--    segmento do caminho. O [1] é o primeiro segmento (uuid do
+--    organizador), garantindo que cada usuário só acessa a
+--    própria "pasta" dentro do bucket.
+-- -----------------------------------------------------------

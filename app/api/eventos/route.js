@@ -25,7 +25,7 @@ export async function POST(request) {
     );
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, lotes } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes } = await request.json();
 
   // Hash da senha APENAS no servidor — nunca exposta ao cliente
   let senha_hash = null;
@@ -47,6 +47,7 @@ export async function POST(request) {
       slug: gerarSlug(titulo),
       visibilidade: visibilidade || "publico",
       senha_hash,
+      imagem_url: imagem_url || null,
     })
     .select("id")
     .single();
