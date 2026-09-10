@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import PublicarButton from "./PublicarButton";
+import PausarButton from "./PausarButton";
+import EditarEvento from "./EditarEvento";
 import { T, BRL } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -10,6 +12,7 @@ const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 const STATUS_LABEL = {
   rascunho: { label: "Rascunho", color: T.muted },
   publicado: { label: "Publicado", color: T.mint },
+  pausado:   { label: "Pausado", color: "#E67E22" },
   encerrado: { label: "Encerrado", color: T.ink2 },
   cancelado: { label: "Cancelado", color: "#E74C3C" },
 };
@@ -22,14 +25,13 @@ export default async function EventoDetalhePage({ params }) {
 
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
     .eq("id", id)
     .eq("organizador_id", user.id)
     .maybeSingle();
 
   if (!evento) notFound();
 
-  // Inscritos (comprador com nome)
   const { data: ingressos } = await supabase
     .from("ingresso")
     .select("id, status, criado_em, lote:lote_id(nome), comprador:comprador_id(nome)")
@@ -44,10 +46,12 @@ export default async function EventoDetalhePage({ params }) {
   const totalVendidos = (evento.lote ?? []).reduce((s, l) => s + l.quantidade_vendida, 0);
   const totalVagas = (evento.lote ?? []).reduce((s, l) => s + l.quantidade_total, 0);
 
+  const editavel = evento.status === "rascunho" || evento.status === "pausado";
+
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
       <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <Link href="/painel/eventos" style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: T.muted, fontSize: 14 }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
             Meus eventos
@@ -61,7 +65,7 @@ export default async function EventoDetalhePage({ params }) {
       </header>
 
       <main style={{ maxWidth: 960, margin: "0 auto", padding: "clamp(32px,5vw,56px) clamp(20px,5vw,48px)" }}>
-        {/* Título + status */}
+        {/* Título + status + ações */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
           <div>
             <span style={{ fontSize: 12, fontWeight: 600, color: st.color, background: `${st.color}18`, padding: "3px 10px", borderRadius: 99, display: "inline-block", marginBottom: 10 }}>
@@ -72,7 +76,10 @@ export default async function EventoDetalhePage({ params }) {
             </h1>
             <p style={{ fontSize: 15, color: T.muted, margin: "8px 0 0" }}>{dataFmt} às {horaFmt}</p>
           </div>
-          {evento.status === "rascunho" && <PublicarButton eventoId={evento.id} />}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {editavel && <PublicarButton eventoId={evento.id} />}
+            {evento.status === "publicado" && <PausarButton eventoId={evento.id} />}
+          </div>
         </div>
 
         {/* Stats */}
@@ -82,23 +89,43 @@ export default async function EventoDetalhePage({ params }) {
           <Stat label="Disponível" value={totalVagas - totalVendidos} />
         </div>
 
-        {/* Lotes */}
-        <Secao titulo="Lotes">
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {(evento.lote ?? []).map((lote) => (
-              <div key={lote.id} style={{ background: "#fff", borderRadius: 12, border: `1px solid ${T.line}`, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 2px" }}>{lote.nome}</p>
-                  <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{lote.preco_cents === 0 ? "Gratuito" : BRL(lote.preco_cents / 100)}</p>
+        {/* Formulário de edição (rascunho ou pausado) */}
+        {editavel && (
+          <EditarEvento
+            eventoId={evento.id}
+            eventoInicial={{
+              titulo: evento.titulo,
+              descricao: evento.descricao,
+              local_nome: evento.local_nome,
+              endereco: evento.endereco,
+              data_inicio: evento.data_inicio,
+              data_fim: evento.data_fim,
+              visibilidade: evento.visibilidade ?? "publico",
+              tem_senha: !!evento.senha_hash,
+            }}
+            lotesIniciais={evento.lote ?? []}
+          />
+        )}
+
+        {/* Lotes (readonly — sempre visível) */}
+        {!editavel && (
+          <Secao titulo="Lotes">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {(evento.lote ?? []).map((lote) => (
+                <div key={lote.id} style={{ background: "#fff", borderRadius: 12, border: `1px solid ${T.line}`, padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 2px" }}>{lote.nome}</p>
+                    <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{lote.preco_cents === 0 ? "Gratuito" : BRL(lote.preco_cents / 100)}</p>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 2px" }}>{lote.quantidade_vendida} / {lote.quantidade_total}</p>
+                    <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>vendidos</p>
+                  </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 2px" }}>{lote.quantidade_vendida} / {lote.quantidade_total}</p>
-                  <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>vendidos</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Secao>
+              ))}
+            </div>
+          </Secao>
+        )}
 
         {/* Inscritos */}
         <Secao titulo={`Inscritos (${(ingressos ?? []).length})`}>

@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { gerarSlug } from "@/lib/slug";
 import { T } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -14,7 +12,7 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "" });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "" });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -65,51 +63,38 @@ export default function NovoEventoPage() {
       if (!l.quantidade || parseInt(l.quantidade) < 1) { setErro("Todos os lotes precisam de uma quantidade mínima de 1."); return; }
     }
 
+    if (form.visibilidade === "privado" && !form.senha.trim()) {
+      setErro("Eventos privados precisam de uma senha de acesso.");
+      return;
+    }
+
     setCarregando(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/entrar"); return; }
 
-    const slug = gerarSlug(form.titulo);
-
-    const { data: evento, error: evErr } = await supabase
-      .from("evento")
-      .insert({
-        organizador_id: user.id,
-        titulo: form.titulo.trim(),
-        descricao: form.descricao.trim() || null,
-        local_nome: form.local_nome.trim() || null,
-        endereco: form.endereco.trim() || null,
+    // Envia para API route — hash da senha feito no servidor, nunca no cliente
+    const res = await fetch("/api/eventos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        titulo: form.titulo,
+        descricao: form.descricao,
+        local_nome: form.local_nome,
+        endereco: form.endereco,
         data_inicio: form.data_inicio,
-        data_fim: form.data_fim || null,
-        slug,
-      })
-      .select("id")
-      .single();
+        data_fim: form.data_fim,
+        visibilidade: form.visibilidade,
+        senha: form.senha || undefined,
+        lotes,
+      }),
+    });
 
-    if (evErr) {
-      setErro("Erro ao criar evento. Tente novamente.");
+    const json = await res.json();
+    if (!res.ok) {
+      setErro(json.erro || "Erro ao criar evento. Tente novamente.");
       setCarregando(false);
       return;
     }
 
-    const { error: loteErr } = await supabase.from("lote").insert(
-      lotes.map((l) => ({
-        evento_id: evento.id,
-        nome: l.nome.trim(),
-        preco_cents: Math.round(parseFloat(l.preco.replace(",", ".") || "0") * 100),
-        quantidade_total: parseInt(l.quantidade),
-      }))
-    );
-
-    if (loteErr) {
-      setErro("Evento criado, mas erro ao salvar lotes. Acesse o evento para corrigir.");
-      setCarregando(false);
-      router.push(`/painel/eventos/${evento.id}`);
-      return;
-    }
-
-    router.push(`/painel/eventos/${evento.id}`);
+    router.push(`/painel/eventos/${json.evento_id}`);
   }
 
   return (
@@ -163,6 +148,32 @@ export default function NovoEventoPage() {
               <Campo label="Data e hora de início *" type="datetime-local" value={form.data_inicio} onChange={setF("data_inicio")} required />
               <Campo label="Data e hora de fim" type="datetime-local" value={form.data_fim} onChange={setF("data_fim")} />
             </div>
+
+            {/* Visibilidade */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Visibilidade</label>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {[["publico", "Público", "Aparece na listagem de eventos"], ["nao_listado", "Não listado", "Acessível pelo link, não aparece na listagem"], ["privado", "Privado", "Exige senha para acessar"]].map(([val, label, desc]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, visibilidade: val, senha: val !== "privado" ? "" : f.senha }))}
+                    style={{
+                      flex: 1, minWidth: 160, padding: "12px 14px", textAlign: "left", borderRadius: 10, cursor: "pointer", fontFamily: fontBody,
+                      border: `2px solid ${form.visibilidade === val ? T.ink : T.line}`,
+                      background: form.visibilidade === val ? "#F6F4FF" : "#fff",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 12, color: T.muted }}>{desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {form.visibilidade === "privado" && (
+              <Campo label="Senha de acesso *" type="password" value={form.senha} onChange={setF("senha")} required placeholder="Mínimo 6 caracteres" minLength={6} />
+            )}
           </Secao>
 
           {/* Lotes */}

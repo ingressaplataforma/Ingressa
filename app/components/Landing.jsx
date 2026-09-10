@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { T, BRL } from "../../lib/tokens";
 
 
@@ -27,29 +27,50 @@ export default function Landing() {
 
 // ---------- Nav ----------
 function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    function onScroll() {
+      const y = window.scrollY;
+      setScrolled(y > 12);
+      lastY.current = y;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "20px clamp(20px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Logo />
-        <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em" }}>
-          Ingressa
-        </span>
-      </div>
-      <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
-        {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"]].map(([x, href]) => (
-          <a key={x} href={href} style={{ color: T.ink2, textDecoration: "none", fontSize: 15, fontWeight: 500 }}>
-            {x}
-          </a>
-        ))}
-        <a href="/entrar" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
-        <a href="/cadastro" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
-      </nav>
-    </header>
+    <div style={{
+      position: "sticky", top: 0, zIndex: 100,
+      background: "#fff",
+      borderBottom: `1px solid ${scrolled ? T.line : "transparent"}`,
+      boxShadow: scrolled ? "0 2px 16px -4px rgba(26,16,53,0.12)" : "none",
+      transition: "box-shadow 0.2s, border-color 0.2s",
+    }}>
+      <header
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px clamp(20px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
+        }}
+      >
+        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
+          <Logo />
+          <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em" }}>
+            Ingressa
+          </span>
+        </a>
+        <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
+          {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"], ["Eventos", "/eventos"]].map(([x, href]) => (
+            <a key={x} href={href} style={{ color: T.ink2, textDecoration: "none", fontSize: 15, fontWeight: 500 }}>
+              {x}
+            </a>
+          ))}
+          <a href="/entrar" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
+          <a href="/cadastro" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
+        </nav>
+      </header>
+    </div>
   );
 }
 
@@ -133,12 +154,12 @@ function TicketMock() {
         }}
       >
         <div style={{ background: T.ink, color: "#fff", padding: "22px 26px" }}>
-          <div style={{ fontSize: 13, color: "#B9AEE0", fontWeight: 500 }}>Congresso Recomeço 2026</div>
+          <div style={{ fontSize: 13, color: "#B9AEE0", fontWeight: 500 }}>Nome do seu evento</div>
           <div style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 600, marginTop: 4 }}>
             Ingresso — Lote 1
           </div>
           <div style={{ fontSize: 13.5, color: "#B9AEE0", marginTop: 8 }}>
-            14 mar · 08h · Centro de Convenções, Blumenau
+            Data · horário · local do evento
           </div>
         </div>
         <Perf />
@@ -349,9 +370,9 @@ function FlowVisual({ step }) {
   if (step === 1)
     return (
       <div style={box}>
-        {field("Nome completo", "Marina Alves de Souza")}
-        {field("E-mail", "marina@email.com")}
-        {field("CPF", "123.456.789-00")}
+        {field("Nome completo", "Participante")}
+        {field("E-mail", "participante@email.com")}
+        {field("CPF", "000.000.000-00")}
       </div>
     );
   if (step === 2)
@@ -370,12 +391,12 @@ function FlowVisual({ step }) {
           <path d="M5 13l4 4L19 7" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
-      <div style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 600 }}>Tudo certo, Marina!</div>
+      <div style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 600 }}>Inscrição confirmada!</div>
       <div style={{ fontSize: 14.5, color: T.ink2, marginTop: 8, lineHeight: 1.55 }}>
         Seu ingresso está no e-mail. Mostre o QR Code na entrada.
       </div>
       <div style={{ marginTop: 18, padding: "12px", borderRadius: 12, background: T.panel, fontSize: 13, color: T.muted }}>
-        Pedido #IG-48213 · Congresso Recomeço 2026
+        Pedido de exemplo · Seu evento
       </div>
     </div>
   );

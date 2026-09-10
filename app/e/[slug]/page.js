@@ -1,23 +1,57 @@
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
+import crypto from "crypto";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { T, BRL } from "@/lib/tokens";
+import GateSenha from "./GateSenha";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
+
+function computeAccessToken(slug, senhaHash) {
+  const secret = process.env.INGRESSO_TOKEN_SECRET || "fallback-dev";
+  return crypto.createHmac("sha256", secret).update(`ea:${slug}:${senhaHash}`).digest("hex").slice(0, 40);
+}
 
 export default async function EventoPublicoPage({ params }) {
   const { slug } = await params;
   const supabase = await createClient();
 
+  // Busca incluindo visibilidade e senha_hash — senha_hash NUNCA vai ao cliente
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
     .eq("slug", slug)
-    .eq("status", "publicado")
+    .in("status", ["publicado", "pausado"])
     .maybeSingle();
 
   if (!evento) notFound();
+
+  // Evento pausado: página pública mostra aviso, não o conteúdo completo
+  if (evento.status === "pausado") {
+    return (
+      <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
+        <p style={{ fontSize: 40, marginBottom: 16 }}>🔧</p>
+        <h1 style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 600, color: T.ink, margin: "0 0 10px" }}>Inscrições temporariamente indisponíveis</h1>
+        <p style={{ fontSize: 15, color: T.muted, maxWidth: 380, lineHeight: 1.6 }}>
+          <strong>{evento.titulo}</strong> está com as inscrições pausadas pelo organizador. Tente novamente em instantes.
+        </p>
+      </div>
+    );
+  }
+
+  // Evento não-listado: acessível por link direto, mas não aparece na listagem pública
+  // Evento privado: exige senha; verifica cookie httpOnly emitido pela API
+  if (evento.visibilidade === "privado") {
+    const jar = await cookies();
+    const cookieToken = jar.get(`ea_${slug}`)?.value;
+    const expectedToken = computeAccessToken(slug, evento.senha_hash ?? "");
+    if (cookieToken !== expectedToken) {
+      // Renderiza gate de senha — nunca expõe senha_hash ao client
+      return <GateSenha slug={slug} titulo={evento.titulo} />;
+    }
+  }
 
   const dataInicio = new Date(evento.data_inicio);
   const dataFim = evento.data_fim ? new Date(evento.data_fim) : null;
@@ -26,7 +60,6 @@ export default async function EventoPublicoPage({ params }) {
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
-      {/* Nav */}
       <nav style={{ borderBottom: `1px solid ${T.line}`, background: "#fff", padding: "0 clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
@@ -38,7 +71,6 @@ export default async function EventoPublicoPage({ params }) {
       </nav>
 
       <main style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(32px,5vw,56px) clamp(20px,5vw,48px)" }}>
-        {/* Header do evento */}
         <div style={{ marginBottom: 40 }}>
           <p style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Evento</p>
           <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(28px,5vw,44px)", fontWeight: 600, color: T.ink, margin: "0 0 20px", lineHeight: 1.1, letterSpacing: "-0.03em" }}>
@@ -60,7 +92,6 @@ export default async function EventoPublicoPage({ params }) {
           </div>
         )}
 
-        {/* Lotes */}
         <div>
           <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 16px" }}>Ingressos</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
