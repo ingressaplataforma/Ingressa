@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./LogoutButton";
 import { T } from "../../lib/tokens";
@@ -20,8 +21,14 @@ export default async function PainelPage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  // Usuário logado sem perfil de organizador (ex: Google sem completar cadastro)
-  if (!org) redirect("/completar-cadastro");
+  // Usuário logado sem perfil de organizador
+  if (!org) {
+    // Comprador puro → carteira
+    const { data: comp } = await supabase.from("comprador").select("id").eq("id", user.id).maybeSingle();
+    if (comp) redirect("/meus-ingressos");
+    // Sem perfil nenhum → completar cadastro de organizador
+    redirect("/completar-cadastro");
+  }
 
   const nome = org.nome || user.email;
 
@@ -45,18 +52,27 @@ export default async function PainelPage() {
           Olá, {nome}!
         </h1>
         <p style={{ fontSize: 17, color: T.ink2, lineHeight: 1.6, maxWidth: 560, margin: "0 0 48px" }}>
-          Sua conta está ativa. Em breve você poderá criar e gerenciar eventos aqui.
+          Crie e gerencie seus eventos a partir daqui.
         </p>
 
-        <div style={{ background: T.panel, borderRadius: 20, border: `1px solid ${T.line}`, padding: "32px", maxWidth: 480, opacity: 0.6 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: T.muted, marginBottom: 10 }}>Em breve</div>
-          <h2 style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 600, color: T.ink, margin: "0 0 10px" }}>Criar evento</h2>
-          <p style={{ fontSize: 14.5, color: T.ink2, margin: 0, lineHeight: 1.55 }}>
-            Nome, data, local, lotes e taxa de ingresso — tudo em poucos passos.
-          </p>
-          <button disabled style={{ marginTop: 20, padding: "12px 20px", background: T.muted, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "not-allowed", fontFamily: fontBody }}>
-            Criar evento
-          </button>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+          {/* Card principal: Meus eventos */}
+          <Link href="/painel/eventos" style={{ background: T.ink, borderRadius: 20, padding: "28px 32px", textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>🎪</div>
+            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: "#fff", margin: "0 0 8px" }}>Meus eventos</h2>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.65)", margin: 0 }}>
+              Veja, crie e publique seus eventos.
+            </p>
+          </Link>
+
+          {/* Criar novo evento */}
+          <Link href="/painel/eventos/novo" style={{ background: T.coral, borderRadius: 20, padding: "28px 32px", textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>✨</div>
+            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: "#fff", margin: "0 0 8px" }}>Novo evento</h2>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", margin: 0 }}>
+              Configure título, datas, local e lotes.
+            </p>
+          </Link>
         </div>
       </main>
     </div>

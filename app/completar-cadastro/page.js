@@ -14,6 +14,7 @@ export default async function CompletarCadastroPage() {
   // Usuário que já tem perfil não precisa completar
   const papel = await resolverPapel(supabase, user.id);
   if (papel === "organizador") redirect("/painel");
+  if (papel === "comprador") redirect("/meus-ingressos"); // comprador puro não usa este form
 
   const nomeGoogle = user.user_metadata?.full_name || user.user_metadata?.name || "";
 
