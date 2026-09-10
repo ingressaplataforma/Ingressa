@@ -177,6 +177,13 @@ export default function NovoEventoPage() {
             )}
           </Secao>
 
+          {/* Banner: lote pago sem plano */}
+          {lotes.some((l) => parseFloat(String(l.preco).replace(",", ".") || "0") > 0) && (
+            <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
+              <strong>Ingresso pago detectado.</strong> Eventos com ingresso pago exigem um plano para publicar — planos chegam em breve. Por enquanto você pode publicar o evento como gratuito (lotes a R$&nbsp;0).
+            </div>
+          )}
+
           {/* Lotes */}
           <Secao titulo="Lotes de ingresso">
             {lotes.map((lote, idx) => (

@@ -127,9 +127,19 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     router.refresh();
   }
 
+  const temLotePago = [...lotesEdit, ...lotesNovos].some(
+    (l) => parseFloat(String(l.preco).replace(",", ".") || "0") > 0
+  );
+
   return (
     <div style={{ marginBottom: 36 }}>
       <h2 style={{ fontFamily: fontDisplay, fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 20px" }}>Editar evento</h2>
+
+      {temLotePago && (
+        <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
+          <strong>Ingresso pago detectado.</strong> Eventos com ingresso pago exigem um plano para publicar — planos chegam em breve. Por enquanto você pode publicar o evento como gratuito (lotes a R$&nbsp;0).
+        </div>
+      )}
 
       <form onSubmit={handleSalvar}>
         {/* Dados básicos */}
