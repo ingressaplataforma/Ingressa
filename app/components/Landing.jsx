@@ -46,8 +46,8 @@ function Nav() {
             {x}
           </a>
         ))}
-        <a href="#lista-espera" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
-        <a href="#lista-espera" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
+        <a href="/entrar" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
+        <a href="/cadastro" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
       </nav>
     </header>
   );
@@ -93,7 +93,7 @@ function Hero() {
           e uma taxa que você entende de cabeça. Sem surpresa no fim do mês.
         </p>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <a href="#lista-espera" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
+          <a href="/cadastro" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
           <a href="#calc" style={{ ...btn.ghost, padding: "15px 26px", fontSize: 16, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             Calcular minha taxa
           </a>
@@ -605,6 +605,28 @@ function SectionHead({ kicker, title, sub }) {
 
 // ---------- Waitlist ----------
 function Waitlist() {
+  const [email, setEmail] = React.useState("");
+  const [status, setStatus] = React.useState("idle"); // idle | loading | ok | duplicate | erro
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setStatus("loading");
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("lista_espera")
+        .insert({ email: email.trim(), origem: "landing" });
+      if (error) {
+        setStatus(error.code === "23505" ? "duplicate" : "erro");
+      } else {
+        setStatus("ok");
+      }
+    } catch {
+      setStatus("erro");
+    }
+  }
+
   return (
     <section id="lista-espera" style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "clamp(48px,7vw,80px) clamp(20px,5vw,72px)", textAlign: "center" }}>
@@ -615,21 +637,33 @@ function Waitlist() {
         <p style={{ fontSize: 16, color: T.ink2, lineHeight: 1.6, margin: "0 0 32px" }}>
           A Ingressa está em desenvolvimento. Deixe seu e-mail e entraremos em contato assim que a plataforma estiver disponível.
         </p>
-        <form
-          action="mailto:contato@ingressa.com.br"
-          method="get"
-          encType="text/plain"
-          style={{ display: "flex", gap: 10, maxWidth: 440, margin: "0 auto", flexWrap: "wrap", justifyContent: "center" }}
-        >
-          <input
-            type="email" name="body" placeholder="seu@email.com" required
-            style={{ flex: 1, minWidth: 220, height: 48, borderRadius: 11, border: `1px solid ${T.line}`, padding: "0 16px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: "#fff", outline: "none" }}
-          />
-          <button type="submit" style={{ ...btn.solid, padding: "0 24px", height: 48 }}>
-            Entrar na lista
-          </button>
-        </form>
-        <p style={{ fontSize: 13, color: T.muted, marginTop: 14 }}>Sem spam. Só um aviso quando abrirmos.</p>
+
+        {status === "ok" ? (
+          <div style={{ background: "#E6FAF4", border: `1px solid ${T.mint}`, borderRadius: 12, padding: "16px 24px", fontSize: 15, color: T.mintDk, fontWeight: 500 }}>
+            Você entrou na lista. Avisaremos quando abrir.
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: "flex", gap: 10, maxWidth: 440, margin: "0 auto", flexWrap: "wrap", justifyContent: "center" }}>
+            <input
+              type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com" required
+              style={{ flex: 1, minWidth: 220, height: 48, borderRadius: 11, border: `1px solid ${T.line}`, padding: "0 16px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: "#fff", outline: "none" }}
+            />
+            <button type="submit" disabled={status === "loading"} style={{ ...btn.solid, padding: "0 24px", height: 48, opacity: status === "loading" ? 0.7 : 1 }}>
+              {status === "loading" ? "Salvando…" : "Entrar na lista"}
+            </button>
+          </form>
+        )}
+
+        {status === "duplicate" && (
+          <p style={{ fontSize: 14, color: T.muted, marginTop: 12 }}>Este e-mail já está na lista.</p>
+        )}
+        {status === "erro" && (
+          <p style={{ fontSize: 14, color: T.coral, marginTop: 12 }}>Algo deu errado. Tente novamente.</p>
+        )}
+        {status !== "ok" && (
+          <p style={{ fontSize: 13, color: T.muted, marginTop: 14 }}>Sem spam. Só um aviso quando abrirmos.</p>
+        )}
       </div>
     </section>
   );
