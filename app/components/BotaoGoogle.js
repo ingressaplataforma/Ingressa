@@ -5,12 +5,15 @@ import { T } from "@/lib/tokens";
 
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
-export default function BotaoGoogle({ label = "Continuar com Google" }) {
+// redirectTo: URL completa para onde o Supabase vai redirecionar após o OAuth.
+// Se omitido, usa /auth/callback padrão (fluxo de organizador).
+export default function BotaoGoogle({ label = "Continuar com Google", redirectTo }) {
   async function handleClick() {
     const supabase = createClient();
+    const destino = redirectTo ?? `${window.location.origin}/auth/callback`;
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: destino },
     });
   }
 

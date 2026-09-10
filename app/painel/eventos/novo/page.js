@@ -14,13 +14,33 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", endereco: "", data_inicio: "", data_fim: "" });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "" });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [buscandoCep, setBuscandoCep] = useState(false);
 
   function setF(campo) {
     return (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
+  }
+
+  async function handleCep(e) {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 8);
+    const formatado = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw;
+    setForm((f) => ({ ...f, cep: formatado }));
+
+    if (raw.length === 8) {
+      setBuscandoCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          const partes = [data.logradouro, data.bairro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : ""].filter(Boolean);
+          setForm((f) => ({ ...f, endereco: partes.join(", ") }));
+        }
+      } catch { /* ignora falhas de rede */ }
+      setBuscandoCep(false);
+    }
   }
 
   function setLote(id, campo) {
@@ -120,9 +140,25 @@ export default function NovoEventoPage() {
               />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Campo label="Local" type="text" value={form.local_nome} onChange={setF("local_nome")} placeholder="Ex.: Teatro Municipal" />
-              <Campo label="Endereço" type="text" value={form.endereco} onChange={setF("endereco")} placeholder="Rua, número, cidade" />
+              <Campo label="Local / Nome do espaço" type="text" value={form.local_nome} onChange={setF("local_nome")} placeholder="Ex.: Teatro Municipal" />
+              <div style={{ marginBottom: 18 }}>
+                <label style={labelStyle}>CEP</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    value={form.cep}
+                    onChange={handleCep}
+                    placeholder="00000-000"
+                    maxLength={9}
+                    style={{ width: "100%", boxSizing: "border-box", height: 46, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 14px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+                  />
+                  {buscandoCep && (
+                    <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: T.muted }}>buscando…</span>
+                  )}
+                </div>
+              </div>
             </div>
+            <Campo label="Endereço completo" type="text" value={form.endereco} onChange={setF("endereco")} placeholder="Preenchido automaticamente pelo CEP, ou digitar" />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Campo label="Data e hora de início *" type="datetime-local" value={form.data_inicio} onChange={setF("data_inicio")} required />
               <Campo label="Data e hora de fim" type="datetime-local" value={form.data_fim} onChange={setF("data_fim")} />
