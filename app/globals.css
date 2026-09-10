@@ -32,6 +32,9 @@ input[type=range]::-moz-range-thumb {
   .hero { grid-template-columns: 1fr !important; gap: 32px !important; }
   .flowcard { grid-template-columns: 1fr !important; gap: 28px !important; }
   .calcgrid { grid-template-columns: 1fr !important; }
-  .plans { grid-template-columns: 1fr !important; }
+  .plans { grid-template-columns: repeat(2, 1fr) !important; }
   header nav a { display: none !important; }
+}
+@media (max-width: 560px) {
+  .plans { grid-template-columns: 1fr !important; }
 }

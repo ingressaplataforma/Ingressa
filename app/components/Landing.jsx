@@ -589,38 +589,136 @@ function Slider({ label, value, min, max, step, onChange, fmt }) {
 }
 
 // ---------- Plans ----------
+const PLANS = [
+  {
+    name: "Grátis",
+    price: "R$ 0",
+    unit: "até 3 eventos",
+    desc: "Crie e publique até 3 eventos sem pagar nada. Inscrições, ingressos com QR e check-in inclusos. Ideal para começar e testar a plataforma.",
+    feats: ["Até 3 eventos", "Inscrições ilimitadas por evento", "Ingresso com QR Code", "Check-in", "Sem cartão de crédito"],
+    cta: "Criar meu primeiro evento",
+    href: "/cadastro",
+    entry: true,   // destaque como ponto de entrada
+    soon: false,
+  },
+  {
+    name: "Avulso",
+    price: "a partir de R$ 1,50",
+    unit: "por ingresso",
+    desc: "Depois dos 3 gratuitos, pague só pelos eventos que fizer. Taxa de serviço de 5,9% (mínimo R$ 1,50 por ingresso) mais o processamento a preço de custo. Sem mensalidade.",
+    feats: ["Serviço 5,9% (mín. R$ 1,50/ingresso)", "Processamento a preço de custo", "Repasse rápido", "Sem mensalidade"],
+    cta: "Começar",
+    href: "/cadastro",
+    entry: false,
+    soon: false,
+  },
+  {
+    name: "Recorrente",
+    price: "a partir de R$ 149",
+    unit: "/mês",
+    desc: "Para quem faz muitos eventos no ano. Mensalidade com taxa de serviço reduzida; processamento sempre repassado a custo. Valores finais em definição.",
+    feats: ["Taxa de serviço reduzida", "Processamento a custo", "Página de organizador", "Ideal para uso recorrente"],
+    cta: "Avise-me quando lançar",
+    href: "#lista-espera",
+    entry: false,
+    soon: true,
+  },
+  {
+    name: "Pacote",
+    price: "a partir de R$ 0,99",
+    unit: "por ingresso, pré-pago",
+    desc: "Compre inscrições em lote com desconto por volume. Quanto maior o pacote, menor o preço por ingresso. O processamento é repassado a custo à parte.",
+    feats: ["De R$ 1,90 (200) a R$ 0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento a custo à parte", "Melhor para alto volume"],
+    cta: "Avise-me quando lançar",
+    href: "#lista-espera",
+    entry: false,
+    soon: true,
+  },
+];
+
 function PlansStrip() {
-  const plans = [
-    { name: "Avulso", price: "5,9%", unit: "+ processamento a custo", desc: "Sem mensalidade. Você paga 5,9% de serviço mais o custo real do Pix ou cartão, sem markup. Tudo visível antes de publicar.", feats: ["Processamento a preço de custo", "Repasse em 24h", "Check-in por QR Code", "Sem taxa escondida"], cta: "Criar evento", hot: false },
-    { name: "Recorrente", price: "R$149", unit: "/mês + 3,9% serviço", desc: "Para quem faz vários eventos no ano. Taxa de serviço reduzida; processamento sempre repassado a custo.", feats: ["Serviço reduzido a 3,9%", "Processamento a custo", "Antecipação de repasse", "Página de organizador", "Suporte prioritário"], cta: "Falar com vendas", hot: true },
-    { name: "Pacote", price: "a partir de R$0,99", unit: "/ingresso, pré-pago", desc: "Lote de inscrições com desconto por volume. Processamento repassado a custo à parte.", feats: ["De R$1,90 (200) a R$0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento a custo", "Melhor para alto volume"], cta: "Ver pacotes", hot: false },
-  ];
   return (
     <section id="precos" style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
-      <SectionHead kicker="Preços" title="Escolha pela sua recorrência, não pela letra miúda" sub="Sem taxa de setup, sem fidelidade. Mude de plano quando seu calendário mudar." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20, marginTop: 40 }} className="plans">
-        {plans.map((p) => (
-          <div key={p.name} style={{
-            background: p.hot ? T.ink : "#fff", color: p.hot ? "#fff" : T.ink,
-            borderRadius: 20, padding: 30, border: `1px solid ${p.hot ? T.ink : T.line}`,
-            position: "relative", boxShadow: p.hot ? "0 30px 60px -30px rgba(26,16,53,0.5)" : "none",
-          }}>
-            {p.hot && <div style={{ position:"absolute", top:20, right:20, fontSize:12, fontWeight:600, color:T.ink, background:T.mint, padding:"4px 10px", borderRadius:99 }}>Mais escolhido</div>}
-            <div style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600 }}>{p.name}</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 4, margin: "14px 0 6px" }}>
-              <span style={{ fontFamily: fontDisplay, fontSize: 40, fontWeight: 700, letterSpacing: "-0.03em" }}>{p.price}</span>
-              <span style={{ fontSize: 15, color: p.hot ? "#B9AEE0" : T.muted }}>{p.unit}</span>
+      <SectionHead
+        kicker="Preços"
+        title="Comece grátis. Evolua quando crescer."
+        sub="Comece com 3 eventos gratuitos — sem cartão, sem aprovação. Quando seu calendário crescer, escolha o plano que cabe no seu ritmo. Sem letra miúda."
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 40 }} className="plans">
+        {PLANS.map((p) => (
+          <div
+            key={p.name}
+            style={{
+              background: "#fff",
+              borderRadius: 20,
+              padding: "26px 24px",
+              border: p.entry ? `2px solid ${T.coral}` : `1px solid ${T.line}`,
+              position: "relative",
+              display: "flex",
+              flexDirection: "column",
+              opacity: p.soon ? 0.82 : 1,
+            }}
+          >
+            {/* Badges */}
+            {p.entry && (
+              <div style={{ position: "absolute", top: -12, left: 20, fontSize: 11, fontWeight: 700, color: "#fff", background: T.coral, padding: "3px 12px", borderRadius: 99, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                Comece aqui
+              </div>
+            )}
+            {p.soon && (
+              <div style={{ position: "absolute", top: 18, right: 18, fontSize: 11, fontWeight: 700, color: T.ink2, background: T.panel, border: `1px solid ${T.line}`, padding: "3px 10px", borderRadius: 99, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                Em breve
+              </div>
+            )}
+
+            {/* Título */}
+            <div style={{ fontFamily: fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink, marginBottom: 14 }}>{p.name}</div>
+
+            {/* Preço */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontFamily: fontDisplay, fontSize: p.price.startsWith("a partir") ? 22 : 34, fontWeight: 700, color: T.ink, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                {p.price}
+              </div>
+              <div style={{ fontSize: 13, color: T.muted, marginTop: 3 }}>{p.unit}</div>
             </div>
-            <p style={{ fontSize: 14.5, lineHeight: 1.55, color: p.hot ? "#C7BDE8" : T.ink2, minHeight: 66 }}>{p.desc}</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 11, margin: "18px 0 24px" }}>
+
+            {/* Descrição */}
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: T.ink2, margin: "0 0 16px", flexGrow: 0 }}>{p.desc}</p>
+
+            {/* Itens */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22, flexGrow: 1 }}>
               {p.feats.map((f) => (
-                <div key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14.5 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill={p.hot?"rgba(0,200,150,0.2)":"#E9FBF4"}/><path d="M7 12.5l3 3 7-7" stroke={T.mintDk} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 9, fontSize: 13.5, color: T.ink2 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <circle cx="12" cy="12" r="12" fill="#E9FBF4"/>
+                    <path d="M7 12.5l3 3 7-7" stroke={T.mintDk} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                   {f}
                 </div>
               ))}
             </div>
-            <a href="#lista-espera" style={{ ...(p.hot ? { ...btn.solid, background: T.coral } : btn.solidLight), display: "block", width: "100%", boxSizing: "border-box", textAlign: "center", textDecoration: "none", padding: "13px" }}>
+
+            {/* CTA */}
+            <a
+              href={p.href}
+              style={{
+                display: "block",
+                width: "100%",
+                boxSizing: "border-box",
+                textAlign: "center",
+                textDecoration: "none",
+                padding: "12px",
+                borderRadius: 11,
+                fontSize: 14,
+                fontWeight: 600,
+                fontFamily: fontBody,
+                ...(p.entry
+                  ? { background: T.coral, color: "#fff", border: "none" }
+                  : p.soon
+                    ? { background: "transparent", color: T.ink2, border: `1px solid ${T.line}` }
+                    : { background: T.ink, color: "#fff", border: "none" }),
+              }}
+            >
               {p.cta}
             </a>
           </div>
