@@ -18,9 +18,12 @@ export default async function PainelPage() {
     .from("organizador")
     .select("nome")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
-  const nome = org?.nome || user.email;
+  // Usuário logado sem perfil de organizador (ex: Google sem completar cadastro)
+  if (!org) redirect("/completar-cadastro");
+
+  const nome = org.nome || user.email;
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>

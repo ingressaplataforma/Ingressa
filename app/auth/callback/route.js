@@ -34,19 +34,24 @@ export async function GET(request) {
     return NextResponse.redirect(`${origin}/entrar?erro=confirmacao`);
   }
 
-  // Após confirmar e-mail, cria/atualiza a linha do organizador com os metadados do signup
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user) {
     const { nome, documento, telefone } = user.user_metadata ?? {};
-    await supabase.from("organizador").upsert({
-      id: user.id,
-      nome: nome ?? "",
-      documento: documento ?? "",
-      telefone: telefone ?? null,
-    });
+
+    // Só cria a linha do organizador se os dados do cadastro manual estiverem
+    // presentes. Login via Google não tem documento → usuário vai para
+    // /completar-cadastro para fornecer os dados restantes.
+    if (nome && documento) {
+      await supabase.from("organizador").upsert({
+        id: user.id,
+        nome,
+        documento,
+        telefone: telefone ?? null,
+      });
+    }
   }
 
   const papel = user ? await resolverPapel(supabase, user.id) : null;

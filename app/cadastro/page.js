@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import BotaoGoogle from "@/app/components/BotaoGoogle";
 import { T } from "../../lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -96,6 +97,8 @@ export default function CadastroPage() {
           <p style={{ fontSize: 15, color: T.muted, margin: "0 0 28px" }}>
             Sem mensalidade para começar. Pague só quando vender.
           </p>
+
+          <BotaoGoogle label="Cadastrar com Google" />
 
           <form onSubmit={handleSubmit}>
             <Campo label="Nome completo" type="text" value={form.nome} onChange={set("nome")} required />
