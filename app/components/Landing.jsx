@@ -813,7 +813,7 @@ function Footer() {
           <Logo />
           <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18 }}>Ingressa</span>
         </div>
-        <span style={{ fontSize: 13.5, color: T.muted }}>Protótipo de conceito · não é um produto real</span>
+        <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>
     </footer>
   );

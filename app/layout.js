@@ -19,6 +19,7 @@ export const metadata = {
   title: "Ingressa — Ingressos para eventos de nicho",
   description:
     "Venda inscrições para retiros, congressos e encontros com repasse antecipado e taxa transparente.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }) {

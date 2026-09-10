@@ -78,7 +78,17 @@ export default async function EventoDetalhePage({ params }) {
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {editavel && <PublicarButton eventoId={evento.id} />}
-            {evento.status === "publicado" && <PausarButton eventoId={evento.id} />}
+            {evento.status === "publicado" && (
+              <>
+                <Link
+                  href={`/painel/eventos/${evento.id}/checkin`}
+                  style={{ padding: "12px 22px", background: T.mint, color: "#fff", borderRadius: 10, textDecoration: "none", fontSize: 15, fontWeight: 600, display: "inline-block" }}
+                >
+                  📷 Abrir check-in
+                </Link>
+                <PausarButton eventoId={evento.id} />
+              </>
+            )}
           </div>
         </div>
 
