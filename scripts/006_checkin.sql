@@ -14,7 +14,7 @@ ALTER TABLE public.ingresso
 -- -----------------------------------------------------------
 -- 2. RLS: organizador pode fazer UPDATE para check-in
 -- -----------------------------------------------------------
-CREATE POLICY IF NOT EXISTS "ingresso_update_organizador_checkin"
+CREATE POLICY "ingresso_update_organizador_checkin"
   ON public.ingresso FOR UPDATE
   USING (
     EXISTS (
