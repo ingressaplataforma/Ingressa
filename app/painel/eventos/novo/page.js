@@ -78,6 +78,7 @@ export default function NovoEventoPage() {
         titulo: form.titulo,
         descricao: form.descricao,
         local_nome: form.local_nome,
+        cep: form.cep,
         endereco: form.endereco,
         data_inicio: form.data_inicio,
         data_fim: form.data_fim,

@@ -21,13 +21,14 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ erro: "Evento não está em modo editável." }, { status: 409 });
   }
 
-  const { titulo, descricao, local_nome, endereco, data_inicio, data_fim, visibilidade, senha, lotes_update, lotes_add, lotes_remove } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, lotes_update, lotes_add, lotes_remove } = await request.json();
 
   // Atualiza campos do evento
   const upd = {};
   if (titulo != null) upd.titulo = titulo.trim();
   if (descricao != null) upd.descricao = descricao.trim() || null;
   if (local_nome != null) upd.local_nome = local_nome.trim() || null;
+  if (cep != null) upd.cep = cep.replace(/\D/g, "").slice(0, 8) || null;
   if (endereco != null) upd.endereco = endereco.trim() || null;
   if (data_inicio) upd.data_inicio = data_inicio;
   if (data_fim !== undefined) upd.data_fim = data_fim || null;

@@ -36,12 +36,32 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     titulo: eventoInicial.titulo ?? "",
     descricao: eventoInicial.descricao ?? "",
     local_nome: eventoInicial.local_nome ?? "",
+    cep: eventoInicial.cep ? `${eventoInicial.cep.slice(0, 5)}-${eventoInicial.cep.slice(5)}` : "",
     endereco: eventoInicial.endereco ?? "",
     data_inicio: eventoInicial.data_inicio ? eventoInicial.data_inicio.slice(0, 16) : "",
     data_fim: eventoInicial.data_fim ? eventoInicial.data_fim.slice(0, 16) : "",
     visibilidade: eventoInicial.visibilidade ?? "publico",
     senha: "",
   });
+  const [buscandoCep, setBuscandoCep] = useState(false);
+
+  async function handleCep(e) {
+    const raw = e.target.value.replace(/\D/g, "").slice(0, 8);
+    const formatado = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw;
+    setForm((f) => ({ ...f, cep: formatado }));
+    if (raw.length === 8) {
+      setBuscandoCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          const partes = [data.logradouro, data.bairro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : ""].filter(Boolean);
+          setForm((f) => ({ ...f, endereco: partes.join(", ") }));
+        }
+      } catch { /* degrada para preenchimento manual */ }
+      setBuscandoCep(false);
+    }
+  }
   const [lotesEdit, setLotesEdit] = useState(lotesIniciais.map((l) => ({ ...l, preco: (l.preco_cents / 100).toFixed(2) })));
   const [lotesRemover, setLotesRemover] = useState([]);
   const [lotesNovos, setLotesNovos] = useState([]);
@@ -85,6 +105,7 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
+        cep: form.cep,
         senha: form.senha || undefined,
         lotes_update: lotesEdit.map((l) => ({ id: l.id, nome: l.nome, preco: l.preco, quantidade: l.quantidade_total })),
         lotes_add: lotesNovos.filter((l) => l.nome.trim()).map((l) => ({ nome: l.nome, preco: l.preco, quantidade: l.quantidade })),
@@ -126,8 +147,24 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Campo label="Local" type="text" value={form.local_nome} onChange={setF("local_nome")} placeholder="Nome do espaço" />
-            <Campo label="Endereço" type="text" value={form.endereco} onChange={setF("endereco")} />
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>CEP</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  value={form.cep}
+                  onChange={handleCep}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  style={{ width: "100%", boxSizing: "border-box", height: 44, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 13px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+                />
+                {buscandoCep && (
+                  <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: T.muted }}>buscando…</span>
+                )}
+              </div>
+            </div>
           </div>
+          <Campo label="Endereço completo" type="text" value={form.endereco} onChange={setF("endereco")} placeholder="Preenchido pelo CEP, ou digitar manualmente" />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Campo label="Início *" type="datetime-local" value={form.data_inicio} onChange={setF("data_inicio")} required />
             <Campo label="Fim" type="datetime-local" value={form.data_fim} onChange={setF("data_fim")} />

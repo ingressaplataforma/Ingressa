@@ -25,7 +25,7 @@ export async function POST(request) {
     );
   }
 
-  const { titulo, descricao, local_nome, endereco, data_inicio, data_fim, visibilidade, senha, lotes } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, lotes } = await request.json();
 
   // Hash da senha APENAS no servidor — nunca exposta ao cliente
   let senha_hash = null;
@@ -40,6 +40,7 @@ export async function POST(request) {
       titulo: titulo.trim(),
       descricao: descricao?.trim() || null,
       local_nome: local_nome?.trim() || null,
+      cep: cep?.replace(/\D/g, "").slice(0, 8) || null,
       endereco: endereco?.trim() || null,
       data_inicio,
       data_fim: data_fim || null,

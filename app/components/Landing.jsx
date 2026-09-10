@@ -142,7 +142,7 @@ function Stat({ n, l }) {
 // Interactive ticket in hero — the product IS the purchase
 function TicketMock() {
   const [qty, setQty] = useState(2);
-  const price = 150;
+  const price = 99;
   const fee = Math.max(price * 0.059, 1.50);
   const proc = Math.max(price * 0.0099, 1.00); // Pix processing at cost
   return (
@@ -475,7 +475,7 @@ function Calculator() {
             Veja exatamente o que você paga — antes de publicar.
           </h2>
           <p style={{ fontSize: 17, color: "#C7BDE8", marginTop: 16, lineHeight: 1.55 }}>
-            5,9% de serviço + processamento a custo real, separados. Compare com os 7,9% que o concorrente cobra com gateway embutido.
+            5,9% de serviço + processamento a custo real, separados. Você vê cada linha — não um percentual que mistura tudo.
           </p>
         </div>
 
@@ -505,33 +505,51 @@ function Calculator() {
 
           {/* results */}
           <div>
-            <div style={{ background: T.mint, borderRadius: 20, padding: "clamp(22px,3vw,32px)", color: T.ink }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: T.mintDk }}>O nosso diferencial</div>
-              <div style={{ fontFamily: fontDisplay, fontSize: "clamp(24px,3.5vw,36px)", fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, margin: "8px 0 10px" }}>
-                Você vê cada centavo antes de publicar
+            {/* 1. Conta aberta — decomposição principal */}
+            <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(22px,3vw,32px)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#8F84B5", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 18 }}>
+                Sua conta aberta
               </div>
-              <div style={{ fontSize: 14.5, color: T.ink2 }}>
-                5,9% de serviço + processamento a custo real — separados, auditáveis, sem embutir na taxa.
-              </div>
-            </div>
-
-            <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(22px,3vw,32px)", marginTop: 16, border: "1px solid rgba(255,255,255,0.1)" }}>
-              <ResRow k="Serviço Ingressa (5,9%)" a={BRL(m.svcUnit)} b={`${BRL(m.compUnit)} tudo junto`} />
-              <ResRow k="Processamento (custo real)" a={BRL(m.gwUnit)} b="embutido" />
-              <div style={{ marginTop: 12, padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-                <p style={{ fontSize: 13, color: "#8F84B5", lineHeight: 1.55, margin: 0 }}>
+              <TaxaRow k="Serviço Ingressa (5,9%)" v={BRL(m.svcUnit)} />
+              <TaxaRow k="Processamento (custo real)" v={BRL(m.gwUnit)} />
+              <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+                <p style={{ fontSize: 13, color: "#8F84B5", lineHeight: 1.6, margin: 0 }}>
                   No concorrente, os 7,9% cobrem serviço e gateway juntos — você nunca vê quanto é de cada.
                 </p>
               </div>
-              <div style={{ height:1, background:"rgba(255,255,255,0.12)", margin:"16px 0" }}/>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline" }}>
-                <span style={{ fontSize:14.5, color:"#C7BDE8" }}>
-                  {absorb==="comprador" ? "Você recebe (100% do valor)" : "Você recebe (líquido das taxas)"}
+
+              {/* 2. Você recebe — muda com o toggle */}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.12)", margin: "20px 0" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 13, color: "#C7BDE8", marginBottom: 4 }}>
+                    {absorb === "comprador"
+                      ? "Você recebe — o comprador paga as taxas por cima"
+                      : "Você recebe — líquido de serviço e processamento"}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8F84B5" }}>
+                    {absorb === "comprador"
+                      ? `Participante paga ${BRL(m.svcUnit + m.gwUnit)} a mais por ingresso`
+                      : `${BRL(m.svcUnit + m.gwUnit)} descontados por ingresso`}
+                  </div>
+                </div>
+                <span style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
+                  {BRL(m.orgNetYear)}
                 </span>
-                <span style={{ fontFamily:fontDisplay, fontSize:24, fontWeight:700 }}>{BRL(m.orgNetYear)}</span>
               </div>
             </div>
-            <a href="#lista-espera" style={{ ...btn.solid, background:T.coral, width:"100%", marginTop:16, padding:"15px", fontSize:16, justifyContent:"center", boxSizing:"border-box", textDecoration:"none", display:"flex" }}>
+
+            {/* 3. Mensagem de transparência — secundária, abaixo */}
+            <div style={{ background: T.mint, borderRadius: 16, padding: "18px 22px", marginTop: 12, color: T.ink, display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.mintDk, marginBottom: 3 }}>O nosso diferencial</div>
+                <div style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 600, lineHeight: 1.25, letterSpacing: "-0.01em" }}>
+                  Você vê cada centavo antes de publicar
+                </div>
+              </div>
+            </div>
+
+            <a href="#lista-espera" style={{ ...btn.solid, background: T.coral, width: "100%", marginTop: 12, padding: "15px", fontSize: 16, justifyContent: "center", boxSizing: "border-box", textDecoration: "none", display: "flex" }}>
               Começar com esse cenário
             </a>
           </div>
@@ -541,12 +559,11 @@ function Calculator() {
   );
 }
 
-function ResRow({ k, a, b, big }) {
+function TaxaRow({ k, v }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 8, alignItems: "baseline", padding: "7px 0" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "7px 0" }}>
       <span style={{ fontSize: 14, color: "#C7BDE8" }}>{k}</span>
-      <span style={{ fontSize: big ? 17 : 14.5, fontWeight: 600, color: T.mint, textAlign: "right" }}>{a}</span>
-      <span style={{ fontSize: big ? 15 : 13.5, color: "#8F84B5", textAlign: "right", textDecoration: "line-through" }}>{b}</span>
+      <span style={{ fontSize: 15, fontWeight: 600, color: T.mint }}>{v}</span>
     </div>
   );
 }

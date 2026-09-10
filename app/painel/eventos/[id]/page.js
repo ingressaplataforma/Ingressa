@@ -25,7 +25,7 @@ export default async function EventoDetalhePage({ params }) {
 
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select("id, titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
     .eq("id", id)
     .eq("organizador_id", user.id)
     .maybeSingle();
@@ -97,6 +97,7 @@ export default async function EventoDetalhePage({ params }) {
               titulo: evento.titulo,
               descricao: evento.descricao,
               local_nome: evento.local_nome,
+              cep: evento.cep,
               endereco: evento.endereco,
               data_inicio: evento.data_inicio,
               data_fim: evento.data_fim,
