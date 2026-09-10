@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { resolverPapel, rotaParaPapel } from "@/lib/supabase/papeis";
 import { T } from "../../lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -22,7 +23,7 @@ export default function EntrarPage() {
     setCarregando(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password: senha });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
 
     if (error) {
       setErro(error.message === "Invalid login credentials"
@@ -32,7 +33,8 @@ export default function EntrarPage() {
       return;
     }
 
-    router.push("/painel");
+    const papel = await resolverPapel(supabase, data.user.id);
+    router.push(rotaParaPapel(papel));
     router.refresh();
   }
 

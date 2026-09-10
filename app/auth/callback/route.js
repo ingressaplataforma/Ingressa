@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { resolverPapel, rotaParaPapel } from "@/lib/supabase/papeis";
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
@@ -48,5 +49,6 @@ export async function GET(request) {
     });
   }
 
-  return NextResponse.redirect(`${origin}/painel`);
+  const papel = user ? await resolverPapel(supabase, user.id) : null;
+  return NextResponse.redirect(`${origin}${rotaParaPapel(papel)}`);
 }
