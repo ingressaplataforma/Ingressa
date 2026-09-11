@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS public.ledger_transacao (
                           'LIBERACAO_RESERVA', 'REEMBOLSO', 'REPASSE',
                           'ESTORNO', 'COBRANCA_PLANO'
                         )),
-    pedido_id           UUID        REFERENCES public.pedido(id),
+    -- pedido_id sem FK: a tabela pedido será criada no Bloco 4.3.
+    -- Em 4.3 adicionar: ALTER TABLE ledger_transacao
+    --   ADD CONSTRAINT fk_ledger_pedido FOREIGN KEY (pedido_id) REFERENCES pedido(id);
+    pedido_id           UUID,
     referencia_externa  TEXT,       -- gateway charge id ou qualquer ref não-pedido
     chave_idempotencia  TEXT        NOT NULL UNIQUE,
     criado_em           TIMESTAMPTZ NOT NULL DEFAULT now()
