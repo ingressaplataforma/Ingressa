@@ -73,6 +73,15 @@ export default async function PainelPage() {
               Configure título, datas, local e lotes.
             </p>
           </Link>
+
+          {/* Plano */}
+          <Link href="/painel/plano" style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "28px 32px", textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>⭐</div>
+            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 8px" }}>Meu plano</h2>
+            <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+              Eventos ilimitados e ingressos pagos.
+            </p>
+          </Link>
         </div>
       </main>
     </div>

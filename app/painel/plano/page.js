@@ -1,0 +1,189 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { T, BRL } from "@/lib/tokens";
+import { BotaoAssinar, BotaoCancelar, BotaoPagarAgora } from "./BotoesPlano";
+
+const fontDisplay = "var(--font-display), Georgia, serif";
+const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
+
+const STATUS_LABEL = {
+  ativa:        { texto: "Ativo",           cor: T.mint },
+  em_graca:     { texto: "Em graça",        cor: "#F39C12" },
+  inadimplente: { texto: "Inadimplente",    cor: "#E74C3C" },
+  cancelada:    { texto: "Cancelado",       cor: T.muted },
+  pendente:     { texto: "Aguard. pagamento", cor: "#F39C12" },
+};
+
+export default async function PlanoPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar");
+
+  // Plano disponível
+  const { data: plano } = await supabase
+    .from("plano")
+    .select("id, nome, preco_cents, periodicidade")
+    .eq("ativo", true)
+    .order("criado_em")
+    .limit(1)
+    .maybeSingle();
+
+  // Assinatura vigente do organizador
+  const { data: assinatura } = await supabase
+    .from("assinatura")
+    .select("id, status, url_pagamento, inicio, proximo_vencimento, graca_ate")
+    .eq("organizador_id", user.id)
+    .order("criado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const temAtiva = assinatura && ["ativa", "em_graca", "pendente"].includes(assinatura.status);
+  const { texto: statusTexto, cor: statusCor } = STATUS_LABEL[assinatura?.status] ?? {};
+
+  function fmtData(iso) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
+      <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <Link href="/painel" style={{ fontSize: 14, color: T.muted, textDecoration: "none" }}>
+            ← Painel
+          </Link>
+          <span style={{ fontSize: 13, fontWeight: 600, color: T.coral }}>Plano</span>
+        </div>
+      </header>
+
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "clamp(40px,6vw,64px) clamp(20px,5vw,48px)" }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 8 }}>Plano Ingressa</p>
+        <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(26px,4vw,38px)", fontWeight: 600, letterSpacing: "-0.03em", color: T.ink, margin: "0 0 40px" }}>
+          Seu plano de organizador
+        </h1>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, maxWidth: 640 }}>
+
+          {/* Card: plano disponível */}
+          {plano && (
+            <div style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "28px 32px", boxShadow: "0 8px 24px -16px rgba(26,16,53,0.12)" }}>
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: T.coral, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {plano.nome}
+                  </p>
+                  <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
+                    {BRL(plano.preco_cents / 100)}
+                    <span style={{ fontSize: 16, fontWeight: 400, color: T.muted }}>/mês</span>
+                  </p>
+                  <p style={{ fontSize: 12, color: T.muted, margin: "4px 0 0" }}>
+                    Valor placeholder — a validar
+                  </p>
+                </div>
+                {assinatura && statusTexto && (
+                  <span style={{ background: statusCor + "22", color: statusCor, fontWeight: 700, fontSize: 13, padding: "4px 12px", borderRadius: 99, whiteSpace: "nowrap" }}>
+                    {statusTexto}
+                  </span>
+                )}
+              </div>
+
+              <ul style={{ margin: "0 0 24px", padding: "0 0 0 18px", color: T.ink2, fontSize: 14, lineHeight: 1.9 }}>
+                <li>Eventos ilimitados (sem limite de 3)</li>
+                <li>Publicar eventos com ingresso pago</li>
+                <li>Repasse antecipado via Pix</li>
+                <li>Relatórios de vendas e check-in</li>
+              </ul>
+
+              {/* Ações conforme estado */}
+              {!assinatura && (
+                <BotaoAssinar planoId={plano.id} />
+              )}
+
+              {assinatura?.status === "pendente" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <p style={{ fontSize: 14, color: T.ink2, margin: 0 }}>
+                    Assinatura criada. Efetue o pagamento para ativar o plano.
+                  </p>
+                  {assinatura.url_pagamento && (
+                    <BotaoPagarAgora url={assinatura.url_pagamento} />
+                  )}
+                </div>
+              )}
+
+              {assinatura?.status === "ativa" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+                    Próxima cobrança: <strong style={{ color: T.ink }}>{fmtData(assinatura.proximo_vencimento)}</strong>
+                  </p>
+                  <BotaoCancelar acessoAte={assinatura.proximo_vencimento} />
+                </div>
+              )}
+
+              {assinatura?.status === "em_graca" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <p style={{ fontSize: 14, color: "#F39C12", margin: 0, fontWeight: 600 }}>
+                    Pagamento em atraso. Acesso garantido até {fmtData(assinatura.graca_ate)}.
+                  </p>
+                  {assinatura.url_pagamento && (
+                    <BotaoPagarAgora url={assinatura.url_pagamento} />
+                  )}
+                  <BotaoCancelar acessoAte={assinatura.proximo_vencimento} />
+                </div>
+              )}
+
+              {assinatura?.status === "inadimplente" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <p style={{ fontSize: 14, color: "#E74C3C", margin: 0, fontWeight: 600 }}>
+                    Acesso bloqueado por inadimplência.
+                  </p>
+                  <BotaoAssinar planoId={plano.id} />
+                </div>
+              )}
+
+              {assinatura?.status === "cancelada" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {assinatura.proximo_vencimento && new Date(assinatura.proximo_vencimento) > new Date() ? (
+                    <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+                      Acesso ativo até {fmtData(assinatura.proximo_vencimento)}.
+                    </p>
+                  ) : (
+                    <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>Plano encerrado.</p>
+                  )}
+                  <BotaoAssinar planoId={plano.id} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Resumo da assinatura atual */}
+          {assinatura && (
+            <div style={{ background: "#fff", borderRadius: 16, border: `1px solid ${T.line}`, padding: "20px 24px" }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: T.ink2, margin: "0 0 12px" }}>Detalhes da assinatura</p>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                <tbody>
+                  <InfoRow label="Status" value={statusTexto ?? assinatura.status} />
+                  <InfoRow label="Início" value={fmtData(assinatura.inicio)} />
+                  <InfoRow label="Próximo vencimento" value={fmtData(assinatura.proximo_vencimento)} />
+                  {assinatura.graca_ate && (
+                    <InfoRow label="Graça até" value={fmtData(assinatura.graca_ate)} />
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <tr style={{ borderBottom: `1px solid ${T.line}` }}>
+      <td style={{ padding: "8px 0", color: T.muted, width: "45%" }}>{label}</td>
+      <td style={{ padding: "8px 0", color: T.ink, fontWeight: 500 }}>{value}</td>
+    </tr>
+  );
+}

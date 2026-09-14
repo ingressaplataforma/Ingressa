@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createClient } from "@/lib/supabase/server";
 import { gerarSlug } from "@/lib/slug";
+import { organizadorTemPlanoAtivo } from "@/lib/planos";
 
 export async function POST(request) {
   const supabase = await createClient();
@@ -11,18 +12,23 @@ export async function POST(request) {
   const { data: org } = await supabase.from("organizador").select("id").eq("id", user.id).maybeSingle();
   if (!org) return NextResponse.json({ erro: "Não é organizador" }, { status: 403 });
 
-  // Limite de 3 eventos gratuitos por organizador (qualquer status conta, sem devolução ao encerrar)
-  // TODO Bloco 4: quando houver plano ativo, substituir por "3 grátis OU plano ativo" — organizador com plano não cai aqui
-  const { count: totalEventos } = await supabase
-    .from("evento")
-    .select("id", { count: "exact", head: true })
-    .eq("organizador_id", user.id);
+  // Limite de 3 eventos gratuitos — ignorado para organizadores com plano ativo
+  const temPlano = await organizadorTemPlanoAtivo(user.id);
+  if (!temPlano) {
+    const { count: totalEventos } = await supabase
+      .from("evento")
+      .select("id", { count: "exact", head: true })
+      .eq("organizador_id", user.id);
 
-  if ((totalEventos ?? 0) >= 3) {
-    return NextResponse.json(
-      { erro: "Você atingiu o limite de 3 eventos gratuitos. Planos com mais eventos chegam em breve.", limite: true },
-      { status: 403 }
-    );
+    if ((totalEventos ?? 0) >= 3) {
+      return NextResponse.json(
+        {
+          erro: "Você atingiu o limite de 3 eventos gratuitos. Assine o plano para criar eventos ilimitados.",
+          limite: true,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes, aceita_cartao, aceita_boleto } = await request.json();
