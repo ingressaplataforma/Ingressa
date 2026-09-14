@@ -477,11 +477,16 @@ function Calculator() {
     const gmvYear    = ticket * qty * events;
     const orgNetYear = absorb === "comprador" ? gmvYear : (ticket - totalUnit) * qty * events;
 
+    const pixSvcYear  = pixSvcBlended  * qty * events;
+    const cardSvcYear = cardSvcBlended * qty * events;
+    const compradorPagaYear = absorb === "comprador" ? gmvYear + totalYear : gmvYear;
+
     return {
       pixSvcUnit, cardSvcUnit, cardProcUnit,
       pixSvcBlended, cardSvcBlended, cardProcBlended,
       svcUnit, gwUnit, totalUnit,
       svcYear, gwYear, totalYear,
+      pixSvcYear, cardSvcYear, compradorPagaYear,
       compUnit, compYear, gmvYear, orgNetYear,
     };
   }, [ticket, qty, events, absorb]);
@@ -575,6 +580,56 @@ function Calculator() {
                 </div>
                 <span style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
                   {BRL(m.orgNetYear)}
+                </span>
+              </div>
+            </div>
+
+            {/* 2. A conta completa — resumo anual */}
+            <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 16, padding: "20px 22px", marginTop: 12, border: "1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#8F84B5", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 14 }}>
+                A conta completa — {qty.toLocaleString("pt-BR")} ingressos × {events} evento{events !== 1 ? "s" : ""}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
+                <span style={{ fontSize: 14, color: "#C7BDE8" }}>Faturamento bruto (GMV)</span>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{BRL(m.gmvYear)}</span>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "5px 0" }}>
+                <div>
+                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>Serviço Ingressa</span>
+                  <span style={{ fontSize: 11, color: T.coral, display: "block", marginTop: 1 }}>nossa receita · Pix {BRL(m.pixSvcYear)} + cartão {BRL(m.cardSvcYear)}</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: T.coral, flexShrink: 0, marginLeft: 8 }}>−{BRL(m.svcYear)}</span>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <div>
+                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>Custo processamento cartão</span>
+                  <span style={{ fontSize: 11, color: "#8F84B5", display: "block", marginTop: 1 }}>repassado a custo — Ingressa não lucra nisso</span>
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#8F84B5", flexShrink: 0, marginLeft: 8 }}>−{BRL(m.gwYear)}</span>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                <span style={{ fontSize: 14, fontWeight: 600 }}>Total de taxas</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: T.coral }}>−{BRL(m.totalYear)}</span>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", paddingTop: 10, marginTop: 2 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>
+                    {absorb === "comprador" ? "Comprador paga (total)" : "Organizador recebe (líquido)"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#8F84B5", marginTop: 2 }}>
+                    {absorb === "comprador"
+                      ? "ingresso + taxas repassadas ao participante"
+                      : "GMV descontado das taxas que você absorve"}
+                  </div>
+                </div>
+                <span style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 700, flexShrink: 0, marginLeft: 12,
+                  color: absorb === "comprador" ? "#fff" : T.mint }}>
+                  {BRL(absorb === "comprador" ? m.compradorPagaYear : m.orgNetYear)}
                 </span>
               </div>
             </div>
