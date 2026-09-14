@@ -98,7 +98,7 @@ function Hero() {
       <div>
         <div style={pill}>
           <span style={{ width: 7, height: 7, borderRadius: 99, background: T.mint, display: "inline-block" }} />
-          5,9% + processamento a custo — sem taxa escondida
+          5,9% de serviço · Pix sem taxa de processamento
         </div>
         <h1
           style={{
@@ -120,8 +120,8 @@ function Hero() {
           </a>
         </div>
         <div style={{ display: "flex", gap: 28, marginTop: 38 }}>
-          <Stat n="5,9%" l="+ processamento a custo" />
-          <Stat n="24h" l="para o repasse cair" />
+          <Stat n="5,9%" l="serviço · Pix grátis" />
+          <Stat n="24h" l="repasse no Pix (próx. dia útil)" />
           <Stat n="0%" l="em eventos gratuitos" />
         </div>
       </div>
@@ -144,7 +144,7 @@ function TicketMock() {
   const [qty, setQty] = useState(1);
   const price = 99;
   const fee = Math.max(price * 0.059, 1.50);
-  const proc = Math.max(price * 0.0099, 1.00); // Pix processing at cost
+  const proc = 0; // Pix: sem taxa de processamento
   return (
     <div style={{ position: "relative" }}>
       <div
@@ -174,11 +174,15 @@ function TicketMock() {
           <div style={{ height: 1, background: T.line, margin: "18px 0" }} />
           <Row k={`${qty} × ingresso`} v={BRL(price * qty)} />
           <Row k={`Taxa de serviço — 5,9% (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
-          <Row k={`Processamento Pix (${qty} × ${BRL(proc)})`} v={BRL(proc * qty)} sub />
+          {/* Pix: processamento grátis */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, alignItems: "center" }}>
+            <span style={{ fontSize: 14.5, color: T.muted }}>Processamento Pix</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.mintDk, background: "#E9FBF4", borderRadius: 6, padding: "2px 8px" }}>grátis</span>
+          </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 14 }}>
             <span style={{ fontWeight: 600, fontSize: 15 }}>Total</span>
             <span style={{ fontFamily: fontDisplay, fontSize: 26, fontWeight: 700, color: T.ink }}>
-              {BRL(price * qty + fee * qty + proc * qty)}
+              {BRL(price * qty + fee * qty)}
             </span>
           </div>
           <button style={{ ...btn.solid, width: "100%", marginTop: 18, padding: "15px", fontSize: 16, justifyContent: "center" }}>
@@ -437,10 +441,10 @@ function Calculator() {
 
   const SVC_PCT = 0.059;
   const SVC_MIN = 1.50;
-  // Gateway costs (Asaas, repassed at cost, no markup)
-  const PIX_PCT = 0.0099;
-  const PIX_MIN = 1.00;
-  const CARD_PCT = 0.0349;
+  // Gateway costs (Asaas, repassados a custo, sem markup)
+  // Pix: R$0,00 — grátis
+  // Cartão à vista: 2,99% + R$0,49, recebimento em ~32 dias
+  const CARD_PCT = 0.0299;
   const CARD_FIX = 0.49;
   const MIX_CARD = 0.40; // 40% cartão, 60% Pix
   const MIX_PIX = 0.60;
@@ -448,20 +452,23 @@ function Calculator() {
   const COMPET_MIN = 1.90;
 
   const m = useMemo(() => {
-    const svcUnit = Math.max(ticket * SVC_PCT, SVC_MIN);
-    const gwUnit = MIX_PIX * Math.max(ticket * PIX_PCT, PIX_MIN) + MIX_CARD * (ticket * CARD_PCT + CARD_FIX);
-    const totalUnit = svcUnit + gwUnit;
+    const svcUnit     = Math.max(ticket * SVC_PCT, SVC_MIN);
+    const cardUnit    = ticket * CARD_PCT + CARD_FIX;   // custo por transação cartão
+    const gwCardUnit  = MIX_CARD * cardUnit;            // ponderado pelo mix
+    const gwPixUnit   = 0;                              // Pix: grátis
+    const gwUnit      = gwPixUnit + gwCardUnit;
+    const totalUnit   = svcUnit + gwUnit;
 
-    const svcYear = svcUnit * qty * events;
-    const gwYear = gwUnit * qty * events;
+    const svcYear  = svcUnit * qty * events;
+    const gwYear   = gwUnit  * qty * events;
     const totalYear = totalUnit * qty * events;
 
     const compUnit = Math.max(ticket * PCT_COMPET, COMPET_MIN);
     const compYear = compUnit * qty * events;
 
-    const gmvYear = ticket * qty * events;
+    const gmvYear    = ticket * qty * events;
     const orgNetYear = absorb === "comprador" ? gmvYear : (ticket - svcUnit - gwUnit) * qty * events;
-    return { svcUnit, gwUnit, totalUnit, svcYear, gwYear, totalYear, compUnit, compYear, gmvYear, orgNetYear };
+    return { svcUnit, gwUnit, gwCardUnit, gwPixUnit, cardUnit, totalUnit, svcYear, gwYear, totalYear, compUnit, compYear, gmvYear, orgNetYear };
   }, [ticket, qty, events, absorb]);
 
   return (
@@ -511,7 +518,38 @@ function Calculator() {
                 Sua conta aberta
               </div>
               <TaxaRow k="Serviço Ingressa (5,9%)" v={BRL(m.svcUnit)} />
-              <TaxaRow k="Processamento (custo real)" v={BRL(m.gwUnit)} />
+
+              {/* Processamento — separado por meio */}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 10, paddingTop: 10 }}>
+                <div style={{ fontSize: 12, color: "#8F84B5", marginBottom: 6 }}>
+                  Processamento — mix {(MIX_PIX * 100).toFixed(0)}% Pix / {(MIX_CARD * 100).toFixed(0)}% cartão:
+                </div>
+                {/* Pix: grátis */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
+                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>
+                    ↳ Pix ({(MIX_PIX * 100).toFixed(0)}% das vendas)
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: T.mintDk, background: "rgba(62,207,142,0.18)", borderRadius: 6, padding: "2px 8px" }}>
+                    grátis
+                  </span>
+                </div>
+                {/* Cartão: 2,99% + R$0,49 */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
+                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>
+                    ↳ Cartão ({(MIX_CARD * 100).toFixed(0)}% das vendas, 2,99% + R$0,49)
+                  </span>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: T.mint }}>{BRL(m.gwCardUnit)}</span>
+                </div>
+              </div>
+
+              {/* Aviso cartão — 32 dias */}
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", marginTop: 10, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontSize: 12.5, color: "#C7BDE8", lineHeight: 1.6 }}>
+                  <strong style={{ color: T.mint }}>Pix:</strong> recebimento no próximo dia útil, sem taxa de processamento.
+                  {" "}<strong style={{ color: "#C7BDE8" }}>Cartão:</strong> recebido em ~32 dias.
+                </div>
+              </div>
+
               <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 <p style={{ fontSize: 13, color: "#8F84B5", lineHeight: 1.6, margin: 0 }}>
                   No concorrente, os 7,9% cobrem serviço e gateway juntos — você nunca vê quanto é de cada.
