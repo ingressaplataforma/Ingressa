@@ -98,7 +98,7 @@ function Hero() {
       <div>
         <div style={pill}>
           <span style={{ width: 7, height: 7, borderRadius: 99, background: T.mint, display: "inline-block" }} />
-          5,9% de serviço · Pix sem taxa de processamento
+          3% no Pix · processamento Pix grátis · sem taxa escondida
         </div>
         <h1
           style={{
@@ -110,8 +110,8 @@ function Hero() {
           orçamento de quem organiza.
         </h1>
         <p style={{ fontSize: 19, lineHeight: 1.55, color: T.ink2, maxWidth: 520, margin: "22px 0 32px" }}>
-          Venda inscrições para retiros, congressos e encontros com repasse antecipado
-          e uma taxa que você entende de cabeça. Sem surpresa no fim do mês.
+          3% de serviço no Pix — e o processamento Pix é grátis, repassamos essa economia inteira.
+          A taxa mais transparente para retiros, congressos e encontros. Sem surpresa no fim do mês.
         </p>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
           <a href="/cadastro" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
@@ -120,8 +120,8 @@ function Hero() {
           </a>
         </div>
         <div style={{ display: "flex", gap: 28, marginTop: 38 }}>
-          <Stat n="5,9%" l="serviço · Pix grátis" />
-          <Stat n="24h" l="repasse no Pix (próx. dia útil)" />
+          <Stat n="3%" l="serviço no Pix · sem processamento" />
+          <Stat n="Pix" l="repasse no próx. dia útil" />
           <Stat n="0%" l="em eventos gratuitos" />
         </div>
       </div>
@@ -143,7 +143,7 @@ function Stat({ n, l }) {
 function TicketMock() {
   const [qty, setQty] = useState(1);
   const price = 99;
-  const fee = Math.max(price * 0.059, 1.50);
+  const fee = Math.max(price * 0.03, 0.99); // Pix: 3%, piso R$0,99
   const proc = 0; // Pix: sem taxa de processamento
   return (
     <div style={{ position: "relative" }}>
@@ -173,7 +173,7 @@ function TicketMock() {
           </div>
           <div style={{ height: 1, background: T.line, margin: "18px 0" }} />
           <Row k={`${qty} × ingresso`} v={BRL(price * qty)} />
-          <Row k={`Taxa de serviço — 5,9% (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
+          <Row k={`Taxa de serviço Pix — 3% (${qty} × ${BRL(fee)})`} v={BRL(fee * qty)} sub />
           {/* Pix: processamento grátis */}
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, alignItems: "center" }}>
             <span style={{ fontSize: 14.5, color: T.muted }}>Processamento Pix</span>
@@ -439,36 +439,51 @@ function Calculator() {
   const [events, setEvents] = useState(6);
   const [absorb, setAbsorb] = useState("comprador"); // quem paga a taxa
 
-  const SVC_PCT = 0.059;
-  const SVC_MIN = 1.50;
-  // Gateway costs (Asaas, repassados a custo, sem markup)
+  // Serviço Ingressa por meio de pagamento
+  const PIX_SVC_PCT = 0.03;    // 3% no Pix
+  const PIX_SVC_MIN = 0.99;    // piso R$0,99
+  const CARD_SVC_PCT = 0.025;  // 2,5% no cartão (serviço aliviado, pois o comprador já paga o custo da operadora à parte)
+  // Gateway Asaas (repassado a custo, sem markup)
   // Pix: R$0,00 — grátis
   // Cartão à vista: 2,99% + R$0,49, recebimento em ~32 dias
-  const CARD_PCT = 0.0299;
-  const CARD_FIX = 0.49;
-  const MIX_CARD = 0.40; // 40% cartão, 60% Pix
-  const MIX_PIX = 0.60;
-  const PCT_COMPET = 0.079; // 7,9% e-inscrição (gateway embutido)
+  const CARD_PROC_PCT = 0.0299;
+  const CARD_PROC_FIX = 0.49;
+  const MIX_CARD = 0.40; // 40% cartão, 60% Pix (mix estimado)
+  const MIX_PIX  = 0.60;
+  const PCT_COMPET = 0.079; // concorrente: ~7,9% no Pix (serviço+gateway embutidos)
   const COMPET_MIN = 1.90;
 
   const m = useMemo(() => {
-    const svcUnit     = Math.max(ticket * SVC_PCT, SVC_MIN);
-    const cardUnit    = ticket * CARD_PCT + CARD_FIX;   // custo por transação cartão
-    const gwCardUnit  = MIX_CARD * cardUnit;            // ponderado pelo mix
-    const gwPixUnit   = 0;                              // Pix: grátis
-    const gwUnit      = gwPixUnit + gwCardUnit;
-    const totalUnit   = svcUnit + gwUnit;
+    // Serviço por transação
+    const pixSvcUnit  = Math.max(ticket * PIX_SVC_PCT,  PIX_SVC_MIN);
+    const cardSvcUnit = ticket * CARD_SVC_PCT;
+    // Processamento por transação (apenas cartão; Pix=0)
+    const cardProcUnit = ticket * CARD_PROC_PCT + CARD_PROC_FIX;
+    // Custos ponderados pelo mix (por ingresso, em média)
+    const pixSvcBlended   = MIX_PIX  * pixSvcUnit;
+    const cardSvcBlended  = MIX_CARD * cardSvcUnit;
+    const cardProcBlended = MIX_CARD * cardProcUnit;
+    const svcUnit   = pixSvcBlended + cardSvcBlended;   // serviço médio
+    const gwUnit    = cardProcBlended;                  // processamento médio (Pix=0)
+    const totalUnit = svcUnit + gwUnit;
 
-    const svcYear  = svcUnit * qty * events;
-    const gwYear   = gwUnit  * qty * events;
+    const svcYear   = svcUnit   * qty * events;
+    const gwYear    = gwUnit    * qty * events;
     const totalYear = totalUnit * qty * events;
 
     const compUnit = Math.max(ticket * PCT_COMPET, COMPET_MIN);
     const compYear = compUnit * qty * events;
 
     const gmvYear    = ticket * qty * events;
-    const orgNetYear = absorb === "comprador" ? gmvYear : (ticket - svcUnit - gwUnit) * qty * events;
-    return { svcUnit, gwUnit, gwCardUnit, gwPixUnit, cardUnit, totalUnit, svcYear, gwYear, totalYear, compUnit, compYear, gmvYear, orgNetYear };
+    const orgNetYear = absorb === "comprador" ? gmvYear : (ticket - totalUnit) * qty * events;
+
+    return {
+      pixSvcUnit, cardSvcUnit, cardProcUnit,
+      pixSvcBlended, cardSvcBlended, cardProcBlended,
+      svcUnit, gwUnit, totalUnit,
+      svcYear, gwYear, totalYear,
+      compUnit, compYear, gmvYear, orgNetYear,
+    };
   }, [ticket, qty, events, absorb]);
 
   return (
@@ -482,7 +497,7 @@ function Calculator() {
             Veja exatamente o que você paga — antes de publicar.
           </h2>
           <p style={{ fontSize: 17, color: "#C7BDE8", marginTop: 16, lineHeight: 1.55 }}>
-            5,9% de serviço + processamento a custo real, separados. Você vê cada linha — não um percentual que mistura tudo.
+            3% no Pix (processamento grátis). Cartão: 2,5% de serviço + custo real da operadora. Cada linha separada — não um percentual que mistura tudo.
           </p>
         </div>
 
@@ -515,44 +530,31 @@ function Calculator() {
             {/* 1. Conta aberta — decomposição principal */}
             <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 20, padding: "clamp(22px,3vw,32px)", border: "1px solid rgba(255,255,255,0.1)" }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#8F84B5", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 18 }}>
-                Sua conta aberta
+                Sua conta aberta — mix {(MIX_PIX*100).toFixed(0)}% Pix / {(MIX_CARD*100).toFixed(0)}% cartão
               </div>
-              <TaxaRow k="Serviço Ingressa (5,9%)" v={BRL(m.svcUnit)} />
 
-              {/* Processamento — separado por meio */}
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)", marginTop: 10, paddingTop: 10 }}>
-                <div style={{ fontSize: 12, color: "#8F84B5", marginBottom: 6 }}>
-                  Processamento — mix {(MIX_PIX * 100).toFixed(0)}% Pix / {(MIX_CARD * 100).toFixed(0)}% cartão:
-                </div>
-                {/* Pix: grátis */}
+              {/* Pix */}
+              <div style={{ background: "rgba(62,207,142,0.08)", borderRadius: 10, padding: "10px 14px", marginBottom: 8, border: "1px solid rgba(62,207,142,0.15)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: T.mintDk, marginBottom: 6, letterSpacing: "0.04em", textTransform: "uppercase" }}>Pix ({(MIX_PIX*100).toFixed(0)}% das vendas)</div>
+                <TaxaRow k={`Serviço 3% (mín. R$0,99) × ${(MIX_PIX*100).toFixed(0)}%`} v={BRL(m.pixSvcBlended)} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
-                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>
-                    ↳ Pix ({(MIX_PIX * 100).toFixed(0)}% das vendas)
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: T.mintDk, background: "rgba(62,207,142,0.18)", borderRadius: 6, padding: "2px 8px" }}>
-                    grátis
-                  </span>
+                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>Processamento Pix</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: T.mintDk, background: "rgba(62,207,142,0.18)", borderRadius: 6, padding: "2px 8px" }}>grátis</span>
                 </div>
-                {/* Cartão: 2,99% + R$0,49 */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0" }}>
-                  <span style={{ fontSize: 14, color: "#C7BDE8" }}>
-                    ↳ Cartão ({(MIX_CARD * 100).toFixed(0)}% das vendas, 2,99% + R$0,49)
-                  </span>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: T.mint }}>{BRL(m.gwCardUnit)}</span>
-                </div>
+                <div style={{ fontSize: 11.5, color: T.mintDk, marginTop: 4 }}>Repasse no próximo dia útil</div>
               </div>
 
-              {/* Aviso cartão — 32 dias */}
-              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 10, padding: "10px 14px", marginTop: 10, border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div style={{ fontSize: 12.5, color: "#C7BDE8", lineHeight: 1.6 }}>
-                  <strong style={{ color: T.mint }}>Pix:</strong> recebimento no próximo dia útil, sem taxa de processamento.
-                  {" "}<strong style={{ color: "#C7BDE8" }}>Cartão:</strong> recebido em ~32 dias.
-                </div>
+              {/* Cartão */}
+              <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "10px 14px", marginBottom: 8, border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#8F84B5", marginBottom: 6, letterSpacing: "0.04em", textTransform: "uppercase" }}>Cartão ({(MIX_CARD*100).toFixed(0)}% das vendas)</div>
+                <TaxaRow k={`Serviço 2,5% × ${(MIX_CARD*100).toFixed(0)}%`} v={BRL(m.cardSvcBlended)} />
+                <TaxaRow k={`Processamento (2,99%+R$0,49) × ${(MIX_CARD*100).toFixed(0)}%`} v={BRL(m.cardProcBlended)} />
+                <div style={{ fontSize: 11.5, color: "#8F84B5", marginTop: 4 }}>Recebimento em ~32 dias</div>
               </div>
 
-              <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                 <p style={{ fontSize: 13, color: "#8F84B5", lineHeight: 1.6, margin: 0 }}>
-                  No concorrente, os 7,9% cobrem serviço e gateway juntos — você nunca vê quanto é de cada.
+                  No mercado, cobram ~7,9% no Pix — tudo misturado. Aqui: 3% de serviço e o processamento Pix é zero. Você vê cada linha.
                 </p>
               </div>
 
@@ -567,8 +569,8 @@ function Calculator() {
                   </div>
                   <div style={{ fontSize: 12, color: "#8F84B5" }}>
                     {absorb === "comprador"
-                      ? `Participante paga ${BRL(m.svcUnit + m.gwUnit)} a mais por ingresso`
-                      : `${BRL(m.svcUnit + m.gwUnit)} descontados por ingresso`}
+                      ? `Participante paga ${BRL(m.totalUnit)} a mais por ingresso (média)`
+                      : `${BRL(m.totalUnit)} descontados por ingresso (média)`}
                   </div>
                 </div>
                 <span style={{ fontFamily: fontDisplay, fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
@@ -641,10 +643,10 @@ const PLANS = [
   },
   {
     name: "Avulso",
-    price: "a partir de R$ 1,50",
-    unit: "por ingresso",
-    desc: "Depois dos 3 gratuitos, pague só pelos eventos que fizer. Taxa de serviço de 5,9% (mínimo R$ 1,50 por ingresso) mais o processamento a preço de custo. Sem mensalidade.",
-    feats: ["Serviço 5,9% (mín. R$ 1,50/ingresso)", "Processamento a preço de custo", "Repasse rápido", "Sem mensalidade"],
+    price: "3% no Pix",
+    unit: "a partir de R$ 0,99 por ingresso",
+    desc: "Depois dos 3 gratuitos, pague só pelo que vender. No Pix: 3% (mín. R$ 0,99) — o processamento Pix é grátis e repassamos essa economia. No cartão: 2,5% de serviço + custo real da operadora. Sem mensalidade.",
+    feats: ["Pix: 3% (mín. R$ 0,99), processamento grátis", "Cartão: 2,5% + custo real (2,99%+R$0,49)", "Repasse Pix no próx. dia útil", "Sem mensalidade"],
     cta: "Começar",
     href: "/cadastro",
     entry: false,
@@ -654,8 +656,8 @@ const PLANS = [
     name: "Recorrente",
     price: "a partir de R$ 149",
     unit: "/mês",
-    desc: "Para quem faz muitos eventos no ano. Mensalidade com taxa de serviço reduzida; processamento sempre repassado a custo. Valores finais em definição.",
-    feats: ["Taxa de serviço reduzida", "Processamento a custo", "Página de organizador", "Ideal para uso recorrente"],
+    desc: "Para quem faz muitos eventos no ano. Mensalidade com taxa de serviço abaixo do avulso; processamento sempre repassado a custo real. Valores finais em definição.",
+    feats: ["Taxa de serviço abaixo do avulso", "Processamento a custo real", "Página de organizador", "Ideal para uso recorrente"],
     cta: "Avise-me quando lançar",
     href: "#lista-espera",
     entry: false,
