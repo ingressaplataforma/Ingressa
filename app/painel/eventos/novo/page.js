@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { T } from "@/lib/tokens";
 import ImagemCapa from "../ImagemCapa";
+import MeiosPagamento from "../MeiosPagamento";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -13,7 +14,7 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null, aceita_cartao: true, aceita_boleto: false });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -86,6 +87,8 @@ export default function NovoEventoPage() {
         visibilidade: form.visibilidade,
         senha: form.senha || undefined,
         imagem_url: form.imagem_url || null,
+        aceita_cartao: form.aceita_cartao,
+        aceita_boleto: form.aceita_boleto,
         lotes,
       }),
     });
@@ -99,6 +102,8 @@ export default function NovoEventoPage() {
 
     router.push(`/painel/eventos/${json.evento_id}`);
   }
+
+  const temLotePago = lotes.some((l) => parseFloat(String(l.preco).replace(",", ".") || "0") > 0);
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
@@ -184,7 +189,7 @@ export default function NovoEventoPage() {
           </Secao>
 
           {/* Banner: lote pago sem plano */}
-          {lotes.some((l) => parseFloat(String(l.preco).replace(",", ".") || "0") > 0) && (
+          {temLotePago && (
             <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
               <strong>Ingresso pago detectado.</strong> Eventos com ingresso pago exigem um plano para publicar — planos chegam em breve. Por enquanto você pode publicar o evento como gratuito (lotes a R$&nbsp;0).
             </div>
@@ -209,6 +214,17 @@ export default function NovoEventoPage() {
               + Adicionar lote
             </button>
           </Secao>
+
+          {/* Formas de pagamento — só para evento pago */}
+          {temLotePago && (
+            <Secao titulo="Formas de pagamento aceitas">
+              <MeiosPagamento
+                aceita_cartao={form.aceita_cartao}
+                aceita_boleto={form.aceita_boleto}
+                onChange={(key, val) => setForm((f) => ({ ...f, [key]: val }))}
+              />
+            </Secao>
+          )}
 
           {erro && (
             <div style={{ background: "#FFF0F0", border: `1px solid #FFD0D0`, borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#C0392B", marginBottom: 20 }}>

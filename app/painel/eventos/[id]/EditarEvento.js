@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/tokens";
 import ImagemCapa from "../ImagemCapa";
+import MeiosPagamento from "../MeiosPagamento";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -44,6 +45,8 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     visibilidade: eventoInicial.visibilidade ?? "publico",
     senha: "",
     imagem_url: eventoInicial.imagem_url ?? null,
+    aceita_cartao: eventoInicial.aceita_cartao ?? true,
+    aceita_boleto: eventoInicial.aceita_boleto ?? false,
   });
   const [buscandoCep, setBuscandoCep] = useState(false);
 
@@ -278,6 +281,18 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
             + Adicionar lote
           </button>
         </div>
+
+        {/* Formas de pagamento — só para evento pago */}
+        {temLotePago && (
+          <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "22px 24px", marginBottom: 16 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: T.muted, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Formas de pagamento aceitas</p>
+            <MeiosPagamento
+              aceita_cartao={form.aceita_cartao}
+              aceita_boleto={form.aceita_boleto}
+              onChange={(key, val) => setForm((f) => ({ ...f, [key]: val }))}
+            />
+          </div>
+        )}
 
         {erro && (
           <div style={{ background: "#FFF0F0", border: `1px solid #FFD0D0`, borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#C0392B", marginBottom: 16 }}>
