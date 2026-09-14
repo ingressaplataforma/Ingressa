@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
+import Image from "next/image";
 import { T, BRL } from "../../lib/tokens";
 
 
@@ -54,11 +55,8 @@ function Nav() {
           padding: "16px clamp(20px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
         }}
       >
-        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "inherit" }}>
-          <Logo />
-          <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 22, letterSpacing: "-0.02em" }}>
-            Ingressa
-          </span>
+        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={150} height={36} style={{ display: "block" }} priority />
         </a>
         <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
           {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"], ["Eventos", "/eventos"]].map(([x, href]) => (
@@ -71,17 +69,6 @@ function Nav() {
         </nav>
       </header>
     </div>
-  );
-}
-
-function Logo() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-      <rect x="1" y="6" width="28" height="18" rx="5" fill={T.ink} />
-      <circle cx="1" cy="15" r="3.4" fill={T.surface} />
-      <circle cx="29" cy="15" r="3.4" fill={T.surface} />
-      <line x1="15" y1="9" x2="15" y2="21" stroke={T.coral} strokeWidth="2.2" strokeDasharray="2 2.4" strokeLinecap="round" />
-    </svg>
   );
 }
 
@@ -904,10 +891,7 @@ function Footer() {
   return (
     <footer style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "40px clamp(20px,5vw,72px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Logo />
-          <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18 }}>Ingressa</span>
-        </div>
+        <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={31} style={{ display: "block" }} />
         <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>
     </footer>

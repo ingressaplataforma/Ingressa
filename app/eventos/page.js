@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { T, BRL } from "@/lib/tokens";
 
@@ -21,9 +22,8 @@ export default async function EventosPage() {
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
       <nav style={{ borderBottom: `1px solid ${T.line}`, background: "#fff", padding: "0 clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-            <LogoIcon />
-            <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
+          <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={142} height={34} style={{ display: "block" }} />
           </Link>
           <Link href="/entrar" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>Entrar</Link>
         </div>
@@ -83,16 +83,5 @@ export default async function EventosPage() {
         )}
       </main>
     </div>
-  );
-}
-
-function LogoIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 30 30" fill="none">
-      <rect x="1" y="6" width="28" height="18" rx="5" fill={T.ink} />
-      <circle cx="1" cy="15" r="3.4" fill={T.surface} />
-      <circle cx="29" cy="15" r="3.4" fill={T.surface} />
-      <line x1="15" y1="9" x2="15" y2="21" stroke="#FF5A5F" strokeWidth="2.2" strokeDasharray="2 2.4" strokeLinecap="round" />
-    </svg>
   );
 }

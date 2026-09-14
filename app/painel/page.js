@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "./LogoutButton";
 import { T } from "../../lib/tokens";
@@ -37,10 +38,9 @@ export default async function PainelPage() {
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <LogoIcon />
-            <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 20, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
-          </div>
+          <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={31} style={{ display: "block" }} />
+          </Link>
           <LogoutButton />
         </div>
       </header>
@@ -79,13 +79,3 @@ export default async function PainelPage() {
   );
 }
 
-function LogoIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 30 30" fill="none">
-      <rect x="1" y="6" width="28" height="18" rx="5" fill={T.ink} />
-      <circle cx="1" cy="15" r="3.4" fill={T.surface} />
-      <circle cx="29" cy="15" r="3.4" fill={T.surface} />
-      <line x1="15" y1="9" x2="15" y2="21" stroke="#FF5A5F" strokeWidth="2.2" strokeDasharray="2 2.4" strokeLinecap="round" />
-    </svg>
-  );
-}

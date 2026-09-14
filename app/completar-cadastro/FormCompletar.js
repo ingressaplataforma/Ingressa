@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 import { T } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -43,9 +44,8 @@ export default function FormCompletar({ userId, email, nomeInicial }) {
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", marginBottom: 36, justifyContent: "center" }}>
-          <LogoIcon />
-          <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 22, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
+        <Link href="/" style={{ display: "flex", justifyContent: "center", textDecoration: "none", marginBottom: 36 }}>
+          <Image src="/ingressa_logo.png" alt="Ingressa — Ingressos para eventos" width={216} height={72} style={{ display: "block" }} priority />
         </Link>
 
         <div style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "clamp(28px,5vw,40px)", boxShadow: "0 20px 40px -24px rgba(26,16,53,0.18)" }}>
@@ -109,16 +109,5 @@ function Campo({ label, type, value, onChange, required, placeholder }) {
         style={{ width: "100%", boxSizing: "border-box", height: 46, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 14px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
       />
     </div>
-  );
-}
-
-function LogoIcon() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-      <rect x="1" y="6" width="28" height="18" rx="5" fill={T.ink} />
-      <circle cx="1" cy="15" r="3.4" fill={T.surface} />
-      <circle cx="29" cy="15" r="3.4" fill={T.surface} />
-      <line x1="15" y1="9" x2="15" y2="21" stroke="#FF5A5F" strokeWidth="2.2" strokeDasharray="2 2.4" strokeLinecap="round" />
-    </svg>
   );
 }

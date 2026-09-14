@@ -16,10 +16,14 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Ingressa — Ingressos para eventos de nicho",
+  title: "Ingressa — Ingressos para eventos",
   description:
     "Venda inscrições para retiros, congressos e encontros com repasse antecipado e taxa transparente.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/ingressa_favicon.png",
+    apple: "/ingressa_favicon.png",
+  },
 };
 
 export default function RootLayout({ children }) {
