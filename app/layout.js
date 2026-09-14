@@ -18,7 +18,7 @@ const inter = Inter({
 export const metadata = {
   title: "Ingressa — Ingressos para eventos",
   description:
-    "Venda inscrições para retiros, congressos e encontros com repasse antecipado e taxa transparente.",
+    "Venda ingressos e inscrições para shows, cursos, congressos, festas e muito mais — repasse rápido e taxa transparente.",
   manifest: "/manifest.json",
   icons: {
     icon: "/ingressa_favicon.png",

@@ -98,7 +98,7 @@ function Hero() {
         </h1>
         <p style={{ fontSize: 19, lineHeight: 1.55, color: T.ink2, maxWidth: 520, margin: "22px 0 32px" }}>
           3% de serviço no Pix — e o processamento Pix é grátis, repassamos essa economia inteira.
-          A taxa mais transparente para retiros, congressos e encontros. Sem surpresa no fim do mês.
+          A taxa mais transparente para shows, cursos, festas, congressos e muito mais. Sem surpresa no fim do mês.
         </p>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
           <a href="/cadastro" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
@@ -228,7 +228,7 @@ function SocialProof() {
         }}
       >
         <span style={{ fontSize: 14, color: T.muted }}>Feito para</span>
-        {["Retiros e acampamentos", "Congressos e convenções", "Encontros de comunidade", "Eventos universitários", "Festivais e celebrações"].map((x) => (
+        {["Shows e festivais", "Cursos e workshops", "Congressos e palestras", "Festas e celebrações", "Eventos esportivos", "Confraternizações"].map((x) => (
           <span key={x} style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 500, color: T.ink2, opacity: 0.85 }}>
             {x}
           </span>
