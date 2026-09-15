@@ -52,7 +52,7 @@ export default function EntrarPage() {
             Bem-vindo de volta
           </h1>
           <p style={{ fontSize: 15, color: T.muted, margin: "0 0 28px" }}>
-            Entre na sua conta de organizador.
+            Entre na sua conta Ingressa.
           </p>
 
           <BotaoGoogle />
@@ -78,9 +78,15 @@ export default function EntrarPage() {
         </div>
 
         <p style={{ textAlign: "center", marginTop: 20, fontSize: 15, color: T.muted }}>
-          Não tem conta?{" "}
-          <Link href="/cadastro" style={{ color: T.coral, fontWeight: 600, textDecoration: "none" }}>
-            Cadastre-se
+          Quer organizar eventos?{" "}
+          <Link href="/cadastro/organizador" style={{ color: T.coral, fontWeight: 600, textDecoration: "none" }}>
+            Criar conta de organizador
+          </Link>
+        </p>
+        <p style={{ textAlign: "center", marginTop: 10, fontSize: 14, color: T.muted }}>
+          Quer comprar ingressos?{" "}
+          <Link href="/cadastro/comprador" style={{ color: T.coral, fontWeight: 600, textDecoration: "none" }}>
+            Criar conta de comprador
           </Link>
         </p>
       </div>

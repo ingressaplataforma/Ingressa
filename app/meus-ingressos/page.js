@@ -12,13 +12,14 @@ export default async function MeusIngressosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const { data: comprador } = await supabase
-    .from("comprador")
-    .select("nome")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: comprador }, { data: org }] = await Promise.all([
+    supabase.from("comprador").select("nome").eq("id", user.id).maybeSingle(),
+    supabase.from("organizador").select("id").eq("id", user.id).maybeSingle(),
+  ]);
 
   if (!comprador) redirect("/entrar");
+
+  const temPerfilOrganizador = !!org;
 
   const { data: ingressos } = await supabase
     .from("ingresso")
@@ -34,7 +35,14 @@ export default async function MeusIngressosPage() {
             <LogoIcon />
             <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 20, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
           </div>
-          <LogoutButton />
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {temPerfilOrganizador && (
+              <Link href="/painel" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>
+                Painel de organizador
+              </Link>
+            )}
+            <LogoutButton />
+          </div>
         </div>
       </header>
 

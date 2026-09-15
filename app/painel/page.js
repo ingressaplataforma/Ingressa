@@ -16,22 +16,19 @@ export default async function PainelPage() {
 
   if (!user) redirect("/entrar");
 
-  const { data: org } = await supabase
-    .from("organizador")
-    .select("nome")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [{ data: org }, { data: comp }] = await Promise.all([
+    supabase.from("organizador").select("nome").eq("id", user.id).maybeSingle(),
+    supabase.from("comprador").select("id").eq("id", user.id).maybeSingle(),
+  ]);
 
   // Usuário logado sem perfil de organizador
   if (!org) {
-    // Comprador puro → carteira
-    const { data: comp } = await supabase.from("comprador").select("id").eq("id", user.id).maybeSingle();
     if (comp) redirect("/meus-ingressos");
-    // Sem perfil nenhum → completar cadastro de organizador
     redirect("/completar-cadastro");
   }
 
   const nome = org.nome || user.email;
+  const temPerfilComprador = !!comp;
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
@@ -41,7 +38,14 @@ export default async function PainelPage() {
           <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
             <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
           </Link>
-          <LogoutButton />
+          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            {temPerfilComprador && (
+              <Link href="/meus-ingressos" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>
+                Meus ingressos
+              </Link>
+            )}
+            <LogoutButton />
+          </div>
         </div>
       </header>
 

@@ -6,11 +6,15 @@ import { T } from "@/lib/tokens";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
 // redirectTo: URL completa para onde o Supabase vai redirecionar após o OAuth.
+// role: 'comprador' adiciona ?role=comprador ao callback para criar o perfil correto.
 // Se omitido, usa /auth/callback padrão (fluxo de organizador).
-export default function BotaoGoogle({ label = "Continuar com Google", redirectTo }) {
+export default function BotaoGoogle({ label = "Continuar com Google", redirectTo, role }) {
   async function handleClick() {
     const supabase = createClient();
-    const destino = redirectTo ?? `${window.location.origin}/auth/callback`;
+    let destino = redirectTo ?? `${window.location.origin}/auth/callback`;
+    if (role && !redirectTo) {
+      destino = `${window.location.origin}/auth/callback?role=${role}`;
+    }
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: destino },
