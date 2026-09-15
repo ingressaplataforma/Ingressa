@@ -16,27 +16,42 @@ export async function POST(request) {
   if (!org) return NextResponse.json({ erro: "Não é organizador" }, { status: 403 });
   if (org.gateway_recipient_id) return NextResponse.json({ ok: true, ja_configurado: true });
 
-  const { nome, email, cpfCnpj, mobilePhone, postalCode, address, addressNumber, province, city, state } = await request.json();
+  const { nome, email, cpfCnpj, birthDate, companyType, incomeValue, mobilePhone, postalCode, address, addressNumber, province, city, state } = await request.json();
 
-  if (!nome || !email || !cpfCnpj || !mobilePhone || !postalCode || !address || !addressNumber || !province) {
+  const cpfCnpjDigits = (cpfCnpj ?? "").replace(/\D/g, "");
+  const isPF = cpfCnpjDigits.length <= 11;
+
+  if (!nome || !email || !cpfCnpj || !mobilePhone || !postalCode || !address || !addressNumber || !province || !incomeValue) {
     return NextResponse.json({ erro: "Preencha todos os campos obrigatórios." }, { status: 400 });
+  }
+  if (isPF && !birthDate) {
+    return NextResponse.json({ erro: "Data de nascimento é obrigatória para pessoa física." }, { status: 400 });
+  }
+  if (!isPF && !companyType) {
+    return NextResponse.json({ erro: "Tipo de empresa é obrigatório para pessoa jurídica." }, { status: 400 });
   }
 
   let subconta;
   try {
-    subconta = await criarSubconta({
+    const payload = {
       name:          nome.trim(),
       email:         email.trim().toLowerCase(),
-      cpfCnpj:       cpfCnpj.replace(/\D/g, ""),
+      cpfCnpj:       cpfCnpjDigits,
       mobilePhone:   mobilePhone.replace(/\D/g, ""),
       postalCode:    postalCode.replace(/\D/g, ""),
       address:       address.trim(),
       addressNumber: addressNumber.trim(),
       province:      province.trim(),
-      city:          city?.trim() || undefined,
-      state:         state?.trim() || undefined,
-      personType:    cpfCnpj.replace(/\D/g, "").length <= 11 ? 'FISICA' : 'JURIDICA',
-    });
+      incomeValue:   parseFloat(String(incomeValue).replace(",", ".")),
+    };
+    if (city?.trim()) payload.city = city.trim();
+    if (state?.trim()) payload.state = state.trim();
+    if (isPF) {
+      payload.birthDate = birthDate;
+    } else {
+      payload.companyType = companyType;
+    }
+    subconta = await criarSubconta(payload);
   } catch (err) {
     console.error("Asaas criarSubconta:", err.message);
     return NextResponse.json(

@@ -30,6 +30,9 @@ export default function FormRecebimento({ organizadorId, nomeAtual }) {
     nome: nomeAtual ?? "",
     email: "",
     cpfCnpj: "",
+    birthDate: "",
+    companyType: "MEI",
+    incomeValue: "",
     mobilePhone: "",
     postalCode: "",
     address: "",
@@ -42,6 +45,8 @@ export default function FormRecebimento({ organizadorId, nomeAtual }) {
   const [carregando, setCarregando] = useState(false);
 
   const setF = (campo) => (val) => setForm((f) => ({ ...f, [campo]: val }));
+
+  const isPF = form.cpfCnpj.replace(/\D/g, "").length <= 11;
 
   function formatarDoc(val) {
     const d = val.replace(/\D/g, "").slice(0, 14);
@@ -68,6 +73,7 @@ export default function FormRecebimento({ organizadorId, nomeAtual }) {
         cpfCnpj: form.cpfCnpj.replace(/\D/g, ""),
         mobilePhone: form.mobilePhone.replace(/\D/g, ""),
         postalCode: form.postalCode.replace(/\D/g, ""),
+        incomeValue: parseFloat(String(form.incomeValue).replace(",", ".")) || 0,
       }),
     });
 
@@ -103,6 +109,27 @@ export default function FormRecebimento({ organizadorId, nomeAtual }) {
           </div>
           <Campo label="Celular *" value={form.mobilePhone} onChange={setF("mobilePhone")} required placeholder="(11) 99999-9999" />
         </div>
+
+        {isPF ? (
+          <Campo label="Data de nascimento *" type="date" value={form.birthDate} onChange={setF("birthDate")} required />
+        ) : (
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Tipo de empresa *</label>
+            <select
+              value={form.companyType}
+              onChange={(e) => setForm((f) => ({ ...f, companyType: e.target.value }))}
+              required
+              style={{ width: "100%", height: 44, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 13px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+            >
+              <option value="MEI">MEI — Microempreendedor Individual</option>
+              <option value="LIMITED">Ltda — Sociedade Limitada</option>
+              <option value="INDIVIDUAL">Empresário Individual</option>
+              <option value="ASSOCIATION">Associação</option>
+            </select>
+          </div>
+        )}
+
+        <Campo label="Faturamento / renda mensal (R$) *" type="number" value={form.incomeValue} onChange={setF("incomeValue")} required placeholder="Ex.: 5000" hint="Valor médio mensal recebido. Exigido pelo Asaas para abertura de conta." />
       </div>
 
       <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "22px 24px", marginBottom: 24 }}>
