@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FluxoInscricao from "./FluxoInscricao";
+import CheckoutPago from "./CheckoutPago";
 
 export default async function InscricaoPage({ params }) {
   const { slug, lote_id } = await params;
@@ -8,7 +9,15 @@ export default async function InscricaoPage({ params }) {
 
   const { data: lote } = await supabase
     .from("lote")
-    .select("id, nome, preco_cents, quantidade_total, quantidade_vendida, evento:evento_id(id, titulo, slug, status, data_inicio, local_nome)")
+    .select(`
+      id, nome, preco_cents, quantidade_total, quantidade_vendida,
+      evento:evento_id(
+        id, titulo, slug, status, data_inicio, local_nome,
+        aceita_cartao, aceita_boleto, quem_paga_taxa,
+        organizador_id,
+        organizador:organizador_id(gateway_recipient_id)
+      )
+    `)
     .eq("id", lote_id)
     .maybeSingle();
 
@@ -18,14 +27,32 @@ export default async function InscricaoPage({ params }) {
 
   const { data: { user } } = await supabase.auth.getUser();
   let temComprador = false;
-
   if (user) {
     const { data: comp } = await supabase.from("comprador").select("id").eq("id", user.id).maybeSingle();
     temComprador = !!comp;
   }
 
+  // Gratuito → fluxo de inscrição imediata existente
+  if (lote.preco_cents === 0) {
+    return (
+      <FluxoInscricao
+        loteId={lote_id}
+        loteNome={lote.nome}
+        precoCents={lote.preco_cents}
+        eventoId={lote.evento.id}
+        eventoTitulo={lote.evento.titulo}
+        eventoSlug={slug}
+        dataInicio={lote.evento.data_inicio}
+        localNome={lote.evento.local_nome}
+        esgotado={esgotado}
+        temComprador={temComprador}
+      />
+    );
+  }
+
+  // Pago → checkout com split
   return (
-    <FluxoInscricao
+    <CheckoutPago
       loteId={lote_id}
       loteNome={lote.nome}
       precoCents={lote.preco_cents}
@@ -36,6 +63,10 @@ export default async function InscricaoPage({ params }) {
       localNome={lote.evento.local_nome}
       esgotado={esgotado}
       temComprador={temComprador}
+      aceitaCartao={lote.evento.aceita_cartao ?? true}
+      aceitaBoleto={lote.evento.aceita_boleto ?? false}
+      quemPagaTaxa={lote.evento.quem_paga_taxa ?? "comprador"}
+      recebedorConfigurado={!!lote.evento.organizador?.gateway_recipient_id}
     />
   );
 }

@@ -21,7 +21,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ erro: "Evento não está em modo editável." }, { status: 409 });
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, aceita_cartao, aceita_boleto, lotes_update, lotes_add, lotes_remove } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, lotes_update, lotes_add, lotes_remove } = await request.json();
 
   // Atualiza campos do evento
   const upd = {};
@@ -36,8 +36,7 @@ export async function PATCH(request, { params }) {
   if (imagem_url !== undefined) upd.imagem_url = imagem_url; // null limpa a imagem
   if (aceita_cartao !== undefined) upd.aceita_cartao = aceita_cartao;
   if (aceita_boleto !== undefined) upd.aceita_boleto = aceita_boleto;
-  // BLOCO 4 (checkout): ler aceita_cartao e aceita_boleto deste evento antes de criar cobrança.
-  // Usar lib/meios-pagamento.js → meioPagamentoPermitido(evento, meio) para validar no servidor.
+  if (quem_paga_taxa !== undefined) upd.quem_paga_taxa = quem_paga_taxa;
 
   if (visibilidade === "privado" && senha) {
     upd.senha_hash = await bcrypt.hash(senha, 12);

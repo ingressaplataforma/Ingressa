@@ -47,6 +47,7 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     imagem_url: eventoInicial.imagem_url ?? null,
     aceita_cartao: eventoInicial.aceita_cartao ?? true,
     aceita_boleto: eventoInicial.aceita_boleto ?? false,
+    quem_paga_taxa: eventoInicial.quem_paga_taxa ?? "comprador",
   });
   const [buscandoCep, setBuscandoCep] = useState(false);
 
@@ -141,11 +142,6 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     <div style={{ marginBottom: 36 }}>
       <h2 style={{ fontFamily: fontDisplay, fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 20px" }}>Editar evento</h2>
 
-      {temLotePago && (
-        <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
-          <strong>Ingresso pago detectado.</strong> Eventos com ingresso pago exigem um plano para publicar — planos chegam em breve. Por enquanto você pode publicar o evento como gratuito (lotes a R$&nbsp;0).
-        </div>
-      )}
 
       <form onSubmit={handleSalvar}>
         {/* Dados básicos */}
@@ -291,6 +287,33 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
               aceita_boleto={form.aceita_boleto}
               onChange={(key, val) => setForm((f) => ({ ...f, [key]: val }))}
             />
+          </div>
+        )}
+
+        {/* Taxa de serviço — só para evento pago */}
+        {temLotePago && (
+          <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "22px 24px", marginBottom: 16 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: T.muted, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Taxa de serviço</p>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {[
+                ["comprador", "Comprador paga a taxa", "A taxa é adicionada ao preço do ingresso. O organizador recebe o valor cheio do lote."],
+                ["organizador", "Organizador absorve a taxa", "O comprador paga exatamente o preço do lote. A taxa é descontada do valor repassado ao organizador."],
+              ].map(([val, label, desc]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, quem_paga_taxa: val }))}
+                  style={{
+                    flex: 1, minWidth: 200, padding: "12px 14px", textAlign: "left", borderRadius: 10, cursor: "pointer", fontFamily: fontBody,
+                    border: `2px solid ${form.quem_paga_taxa === val ? T.ink : T.line}`,
+                    background: form.quem_paga_taxa === val ? "#F6F4FF" : "#fff",
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 2 }}>{label}</div>
+                  <div style={{ fontSize: 12, color: T.muted }}>{desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 

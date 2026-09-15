@@ -25,7 +25,7 @@ export default async function EventoPublicoPage({ params }) {
 
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, imagem_url, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, imagem_url, organizador:organizador_id(gateway_recipient_id), lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
     .eq("slug", slug)
     .in("status", ["publicado", "pausado"])
     .maybeSingle();
@@ -142,8 +142,10 @@ export default async function EventoPublicoPage({ params }) {
               {evento.lote.map((lote) => {
                 const esgotado = lote.quantidade_vendida >= lote.quantidade_total;
                 const restantes = lote.quantidade_total - lote.quantidade_vendida;
+                const pago = lote.preco_cents > 0;
+                const recebedorConfigurado = !!evento.organizador?.gateway_recipient_id;
                 return (
-                  <div key={lote.id} style={{ background: imageUrl ? "#fff" : "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                  <div key={lote.id} style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
                     <div>
                       <p style={{ fontSize: 16, fontWeight: 600, color: T.ink, margin: "0 0 4px" }}>{lote.nome}</p>
                       <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
@@ -156,9 +158,11 @@ export default async function EventoPublicoPage({ params }) {
                     </div>
                     {esgotado ? (
                       <button disabled style={{ padding: "11px 24px", background: T.line, color: T.muted, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "not-allowed", fontFamily: fontBody }}>Esgotado</button>
+                    ) : pago && !recebedorConfigurado ? (
+                      <span style={{ padding: "11px 24px", background: T.panel, color: T.muted, borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: fontBody }}>Em breve</span>
                     ) : (
                       <Link href={`/e/${slug}/inscrever/${lote.id}`} style={{ padding: "11px 24px", background: T.coral, color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-block", fontFamily: fontBody }}>
-                        Inscrever-se
+                        {pago ? "Comprar" : "Inscrever-se"}
                       </Link>
                     )}
                   </div>

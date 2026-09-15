@@ -14,7 +14,7 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null, aceita_cartao: true, aceita_boleto: false });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null, aceita_cartao: true, aceita_boleto: false, quem_paga_taxa: "comprador" });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -89,6 +89,7 @@ export default function NovoEventoPage() {
         imagem_url: form.imagem_url || null,
         aceita_cartao: form.aceita_cartao,
         aceita_boleto: form.aceita_boleto,
+        quem_paga_taxa: form.quem_paga_taxa,
         lotes,
       }),
     });
@@ -188,12 +189,6 @@ export default function NovoEventoPage() {
             )}
           </Secao>
 
-          {/* Banner: lote pago sem plano */}
-          {temLotePago && (
-            <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 10, padding: "12px 16px", marginBottom: 20, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
-              <strong>Ingresso pago detectado.</strong> Eventos com ingresso pago exigem um plano para publicar — planos chegam em breve. Por enquanto você pode publicar o evento como gratuito (lotes a R$&nbsp;0).
-            </div>
-          )}
 
           {/* Lotes */}
           <Secao titulo="Lotes de ingresso">
@@ -223,6 +218,32 @@ export default function NovoEventoPage() {
                 aceita_boleto={form.aceita_boleto}
                 onChange={(key, val) => setForm((f) => ({ ...f, [key]: val }))}
               />
+            </Secao>
+          )}
+
+          {/* Taxa de serviço — só para evento pago */}
+          {temLotePago && (
+            <Secao titulo="Taxa de serviço">
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {[
+                  ["comprador", "Comprador paga a taxa", "A taxa é adicionada ao preço do ingresso. O organizador recebe o valor cheio do lote."],
+                  ["organizador", "Organizador absorve a taxa", "O comprador paga exatamente o preço do lote. A taxa é descontada do valor repassado ao organizador."],
+                ].map(([val, label, desc]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, quem_paga_taxa: val }))}
+                    style={{
+                      flex: 1, minWidth: 200, padding: "12px 14px", textAlign: "left", borderRadius: 10, cursor: "pointer", fontFamily: fontBody,
+                      border: `2px solid ${form.quem_paga_taxa === val ? T.ink : T.line}`,
+                      background: form.quem_paga_taxa === val ? "#F6F4FF" : "#fff",
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 12, color: T.muted }}>{desc}</div>
+                  </button>
+                ))}
+              </div>
             </Secao>
           )}
 

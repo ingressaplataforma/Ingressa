@@ -82,6 +82,15 @@ export default async function PainelPage() {
               Eventos ilimitados e ingressos pagos.
             </p>
           </Link>
+
+          {/* Recebimento */}
+          <Link href="/painel/recebimento" style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "28px 32px", textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>💳</div>
+            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 8px" }}>Recebimento</h2>
+            <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+              Configure onde receber o dinheiro das vendas.
+            </p>
+          </Link>
         </div>
       </main>
     </div>

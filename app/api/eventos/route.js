@@ -31,7 +31,7 @@ export async function POST(request) {
     }
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes, aceita_cartao, aceita_boleto } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes, aceita_cartao, aceita_boleto, quem_paga_taxa } = await request.json();
 
   // Hash da senha APENAS no servidor — nunca exposta ao cliente
   let senha_hash = null;
@@ -56,6 +56,7 @@ export async function POST(request) {
       imagem_url: imagem_url || null,
       aceita_cartao: aceita_cartao ?? true,
       aceita_boleto: aceita_boleto ?? false,
+      quem_paga_taxa: quem_paga_taxa ?? "comprador",
     })
     .select("id")
     .single();
