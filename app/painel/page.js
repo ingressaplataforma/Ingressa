@@ -38,8 +38,8 @@ export default async function PainelPage() {
       {/* Header */}
       <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ display: "block", objectFit: "contain" }} />
+          <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
+            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
           </Link>
           <LogoutButton />
         </div>

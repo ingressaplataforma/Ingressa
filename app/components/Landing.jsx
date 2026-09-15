@@ -55,8 +55,8 @@ function Nav() {
           padding: "16px clamp(20px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
         }}
       >
-        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={150} height={50} style={{ display: "block", objectFit: "contain" }} priority />
+        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={150} height={50} style={{ width: 150, height: "auto" }} priority />
         </a>
         <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
           {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"], ["Eventos", "/eventos"]].map(([x, href]) => (
@@ -891,7 +891,7 @@ function Footer() {
   return (
     <footer style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "40px clamp(20px,5vw,72px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ display: "block", objectFit: "contain" }} />
+        <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
         <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>
     </footer>
