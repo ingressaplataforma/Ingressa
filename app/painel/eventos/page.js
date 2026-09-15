@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { organizadorTemPlanoAtivo } from "@/lib/planos";
 import { T } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -28,7 +29,8 @@ export default async function EventosPage() {
     .order("criado_em", { ascending: false });
 
   const totalEventos = (eventos ?? []).length;
-  const limiteBloqueado = totalEventos >= LIMITE_GRATIS;
+  const temPlano = await organizadorTemPlanoAtivo(user.id);
+  const limiteBloqueado = !temPlano && totalEventos >= LIMITE_GRATIS;
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
