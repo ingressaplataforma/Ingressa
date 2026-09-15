@@ -23,7 +23,7 @@ export default async function EventosPage() {
       <nav style={{ borderBottom: `1px solid ${T.line}`, background: "#fff", padding: "0 clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={142} height={34} style={{ display: "block" }} />
+            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={142} height={47} style={{ display: "block", objectFit: "contain" }} />
           </Link>
           <Link href="/entrar" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>Entrar</Link>
         </div>
