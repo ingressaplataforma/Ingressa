@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { organizadorTemPlanoAtivo } from "@/lib/planos";
 import { T } from "@/lib/tokens";
@@ -36,9 +37,8 @@ export default async function EventosPage() {
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
       <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link href="/painel" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-            <LogoIcon />
-            <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 20, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
+          <Link href="/painel" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
+            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
           </Link>
           {limiteBloqueado ? (
             <span style={{ padding: "10px 20px", background: T.line, color: T.muted, borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: fontBody, cursor: "not-allowed" }}>
@@ -102,13 +102,3 @@ export default async function EventosPage() {
   );
 }
 
-function LogoIcon() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 30 30" fill="none">
-      <rect x="1" y="6" width="28" height="18" rx="5" fill={T.ink} />
-      <circle cx="1" cy="15" r="3.4" fill={T.surface} />
-      <circle cx="29" cy="15" r="3.4" fill={T.surface} />
-      <line x1="15" y1="9" x2="15" y2="21" stroke="#FF5A5F" strokeWidth="2.2" strokeDasharray="2 2.4" strokeLinecap="round" />
-    </svg>
-  );
-}
