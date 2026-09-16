@@ -6,7 +6,7 @@ import { T } from "@/lib/tokens";
 
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
-export function BotaoAssinar({ planoId }) {
+export function BotaoAssinar({ planoId, label, dark }) {
   const [estado, setEstado] = useState("idle"); // idle | loading | erro
   const [erro, setErro] = useState("");
 
@@ -45,8 +45,8 @@ export function BotaoAssinar({ planoId }) {
         disabled={estado === "loading"}
         style={{
           padding: "14px 32px",
-          background: estado === "loading" ? T.muted : T.coral,
-          color: "#fff",
+          background: estado === "loading" ? T.muted : dark ? "#fff" : T.coral,
+          color: estado === "loading" ? "#fff" : dark ? T.ink : "#fff",
           border: "none",
           borderRadius: 12,
           fontSize: 16,
@@ -55,7 +55,7 @@ export function BotaoAssinar({ planoId }) {
           fontFamily: fontBody,
         }}
       >
-        {estado === "loading" ? "Iniciando…" : "Assinar plano"}
+        {estado === "loading" ? "Iniciando…" : (label ?? "Assinar plano")}
       </button>
       {erro && (
         <p style={{ marginTop: 10, fontSize: 14, color: "#C0392B" }}>{erro}</p>
