@@ -27,8 +27,16 @@ export default function Landing() {
 
 
 // ---------- Nav ----------
+const NAV_LINKS = [
+  ["Como funciona", "#como-funciona"],
+  ["Para organizadores", "#calc"],
+  ["Preços", "#precos"],
+  ["Eventos", "/eventos"],
+];
+
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const lastY = useRef(0);
 
   useEffect(() => {
@@ -41,33 +49,107 @@ function Nav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fecha o menu ao clicar em um link interno
+  function handleNavClick(href) {
+    setMenuOpen(false);
+    if (href.startsWith("#")) {
+      const el = document.querySelector(href);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
   return (
     <div style={{
       position: "sticky", top: 0, zIndex: 100,
       background: "#fff",
-      borderBottom: `1px solid ${scrolled ? T.line : "transparent"}`,
+      borderBottom: `1px solid ${scrolled || menuOpen ? T.line : "transparent"}`,
       boxShadow: scrolled ? "0 2px 16px -4px rgba(26,16,53,0.12)" : "none",
       transition: "box-shadow 0.2s, border-color 0.2s",
     }}>
-      <header
-        style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "16px clamp(20px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
-        }}
-      >
-        <a href="/" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }} style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}>
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={150} height={50} style={{ width: 150, height: "auto" }} priority />
+      <header style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "14px clamp(16px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
+      }}>
+        {/* Logo — idêntico ao /painel: width=130, height=auto, flexShrink=0 */}
+        <a
+          href="/"
+          onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }}
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
+        >
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} priority />
         </a>
-        <nav style={{ display: "flex", gap: 28, alignItems: "center" }}>
-          {[["Como funciona", "#como-funciona"], ["Para organizadores", "#calc"], ["Preços", "#precos"], ["Eventos", "/eventos"]].map(([x, href]) => (
+
+        {/* Desktop nav */}
+        <nav className="nav-desktop" style={{ gap: 28, alignItems: "center" }}>
+          {NAV_LINKS.map(([x, href]) => (
             <a key={x} href={href} style={{ color: T.ink2, textDecoration: "none", fontSize: 15, fontWeight: 500 }}>
               {x}
             </a>
           ))}
           <a href="/entrar" style={{ ...btn.ghost, textDecoration: "none" }}>Entrar</a>
-          <a href="/cadastro" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
+          <a href="/cadastro/organizador" style={{ ...btn.solid, textDecoration: "none" }}>Criar evento</a>
         </nav>
+
+        {/* Mobile: botão hambúrguer */}
+        <button
+          className="nav-hamburger"
+          onClick={() => setMenuOpen((o) => !o)}
+          aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            padding: 8, borderRadius: 8, color: T.ink,
+          }}
+        >
+          {menuOpen ? (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          )}
+        </button>
       </header>
+
+      {/* Mobile menu drawer */}
+      <div
+        className="nav-mobile-menu"
+        style={{
+          flexDirection: "column",
+          background: "#fff",
+          borderTop: `1px solid ${T.line}`,
+          padding: menuOpen ? "20px clamp(16px,5vw,72px) 28px" : 0,
+          maxHeight: menuOpen ? 480 : 0,
+          overflow: "hidden",
+          transition: "max-height 0.25s ease, padding 0.25s ease",
+        }}
+      >
+        {NAV_LINKS.map(([x, href]) => (
+          <a
+            key={x}
+            href={href}
+            onClick={(e) => { if (href.startsWith("#")) { e.preventDefault(); handleNavClick(href); } else setMenuOpen(false); }}
+            style={{ color: T.ink2, textDecoration: "none", fontSize: 17, fontWeight: 500, padding: "10px 0", borderBottom: `1px solid ${T.line}` }}
+          >
+            {x}
+          </a>
+        ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
+          <a href="/entrar" onClick={() => setMenuOpen(false)}
+            style={{ ...btn.ghost, textDecoration: "none", justifyContent: "center", textAlign: "center" }}>
+            Entrar
+          </a>
+          <a href="/cadastro/organizador" onClick={() => setMenuOpen(false)}
+            style={{ ...btn.solid, textDecoration: "none", justifyContent: "center", textAlign: "center" }}>
+            Criar evento
+          </a>
+          <a href="/cadastro/comprador" onClick={() => setMenuOpen(false)}
+            style={{ fontSize: 14, color: T.muted, textDecoration: "none", textAlign: "center", padding: "4px 0" }}>
+            Só comprar ingressos?
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
@@ -101,7 +183,7 @@ function Hero() {
           A taxa mais transparente para shows, cursos, festas, congressos e muito mais. Sem surpresa no fim do mês.
         </p>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-          <a href="/cadastro" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
+          <a href="/cadastro/organizador" style={{ ...btn.solid, padding: "15px 26px", fontSize: 16, textDecoration: "none" }}>Criar meu evento</a>
           <a href="#calc" style={{ ...btn.ghost, padding: "15px 26px", fontSize: 16, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             Calcular minha taxa
           </a>
@@ -222,17 +304,22 @@ function SocialProof() {
   return (
     <div style={{ borderTop: `1px solid ${T.line}`, borderBottom: `1px solid ${T.line}`, background: T.panel }}>
       <div
+        className="social-proof-inner"
         style={{
           maxWidth: 1240, margin: "0 auto", padding: "18px clamp(20px,5vw,72px)",
-          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16,
+          display: "flex", alignItems: "center", flexWrap: "wrap", gap: "10px 28px",
         }}
       >
-        <span style={{ fontSize: 14, color: T.muted }}>Feito para</span>
-        {["Shows e festivais", "Cursos e workshops", "Congressos e palestras", "Festas e celebrações", "Eventos esportivos", "Confraternizações"].map((x) => (
-          <span key={x} style={{ fontFamily: fontDisplay, fontSize: 17, fontWeight: 500, color: T.ink2, opacity: 0.85 }}>
-            {x}
-          </span>
-        ))}
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.muted, textTransform: "uppercase", letterSpacing: "0.05em", flexShrink: 0 }}>
+          Feito para
+        </span>
+        <div className="social-proof-items" style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px", alignItems: "center" }}>
+          {["Shows e festivais", "Cursos e workshops", "Congressos e palestras", "Festas e celebrações", "Eventos esportivos", "Confraternizações"].map((x) => (
+            <span key={x} style={{ fontFamily: fontDisplay, fontSize: 16, fontWeight: 500, color: T.ink2, opacity: 0.85 }}>
+              {x}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -891,7 +978,10 @@ function Footer() {
   return (
     <footer style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "40px clamp(20px,5vw,72px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
+        {/* Wrapper com flexShrink:0 para o logo nunca encolher no flex container */}
+        <div style={{ flexShrink: 0, lineHeight: 0 }}>
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
+        </div>
         <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>
     </footer>

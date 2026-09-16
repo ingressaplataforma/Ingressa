@@ -8,7 +8,7 @@ body {
 }
 a { color: inherit; }
 
-/* Slider da calculadora (antes injetado via JS) */
+/* Slider da calculadora */
 input[type=range]::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
@@ -27,13 +27,35 @@ input[type=range]::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* Responsivo (antes injetado via JS) */
+/* Desktop: mostra nav, esconde hambúrguer */
+.nav-desktop  { display: flex !important; }
+.nav-hamburger { display: none !important; }
+.nav-mobile-menu { display: none !important; }
+
+/* Responsivo */
 @media (max-width: 860px) {
-  .hero { grid-template-columns: 1fr !important; gap: 32px !important; }
+  .hero     { grid-template-columns: 1fr !important; gap: 32px !important; }
   .flowcard { grid-template-columns: 1fr !important; gap: 28px !important; }
   .calcgrid { grid-template-columns: 1fr !important; }
-  .plans { grid-template-columns: repeat(2, 1fr) !important; }
-  header nav a { display: none !important; }
+  .plans    { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Troca nav desktop pelo hambúrguer */
+  .nav-desktop   { display: none !important; }
+  .nav-hamburger { display: flex !important; align-items: center; }
+  .nav-mobile-menu { display: flex !important; }
+
+  /* Seção "Feito para" — coluna única no mobile */
+  .social-proof-inner {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+  .social-proof-items {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 16px !important;
+    width: 100% !important;
+  }
 }
 @media (max-width: 560px) {
   .plans { grid-template-columns: 1fr !important; }
