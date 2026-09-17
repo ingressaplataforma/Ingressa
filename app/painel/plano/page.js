@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { T, BRL } from "@/lib/tokens";
 import { BotaoAssinar, BotaoCancelar, BotaoPagarAgora } from "./BotoesPlano";
+import { PLANOS } from "@/lib/planos-catalogo";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -15,19 +16,9 @@ const STATUS_LABEL = {
   pendente:     { texto: "Aguard. pagamento",  cor: "#F39C12" },
 };
 
-const BENEFICIOS_GRATIS = [
-  "Até 3 eventos",
-  "Inscrições gratuitas ilimitadas",
-  "Ingresso digital com QR Code",
-  "Check-in por QR Code",
-];
-
-const BENEFICIOS_PAGO = [
-  "Eventos ilimitados",
-  "Ingressos pagos (split automático via Pix)",
-  "Repasse antecipado ao organizador",
-  "Relatórios de vendas e check-in",
-];
+const catGratis     = PLANOS.find((p) => p.id === "gratis");
+const catRecorrente = PLANOS.find((p) => p.id === "recorrente");
+const planoEmBreve  = PLANOS.filter((p) => !p.disponivel);
 
 export default async function PlanoPage() {
   const supabase = await createClient();
@@ -51,11 +42,9 @@ export default async function PlanoPage() {
       .maybeSingle(),
   ]);
 
-  // Assinatura "ativa" = ativa, em_graça ou pendente (aguardando pagamento)
   const assinaturaAtiva = assinatura &&
     ["ativa", "em_graca", "pendente"].includes(assinatura.status);
 
-  // Cancelada mas com acesso ainda vigente → mantém acesso mas não é "ativa"
   const canceladaComAcesso = assinatura?.status === "cancelada" &&
     assinatura.proximo_vencimento &&
     new Date(assinatura.proximo_vencimento) > new Date();
@@ -89,62 +78,56 @@ export default async function PlanoPage() {
           Seu plano de organizador
         </h1>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24, maxWidth: 640 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20, maxWidth: 640 }}>
 
           {/* ─────────────────────────────────────────────────── */}
-          {/* ESTADO A: sem assinatura ativa → mostra Plano Grátis */}
+          {/* ESTADO A: sem assinatura ativa                      */}
           {/* ─────────────────────────────────────────────────── */}
           {!temPlanoAtivo && (
             <>
-              {/* Card: plano atual = Grátis */}
+              {/* Card: Grátis — plano atual */}
               <div style={{ background: "#fff", borderRadius: 20, border: `2px solid ${T.line}`, padding: "28px 32px", position: "relative" }}>
                 <span style={{ position: "absolute", top: 20, right: 24, background: T.mint + "22", color: T.mint, fontWeight: 700, fontSize: 13, padding: "4px 12px", borderRadius: 99 }}>
                   Plano atual
                 </span>
                 <p style={{ fontSize: 13, fontWeight: 700, color: T.ink2, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  Plano Grátis
+                  {catGratis.nome}
                 </p>
-                <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: T.ink, margin: "0 0 20px", letterSpacing: "-0.02em" }}>
-                  R$ 0
+                <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: T.ink, margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+                  {catGratis.preco}
                   <span style={{ fontSize: 16, fontWeight: 400, color: T.muted }}>/mês</span>
                 </p>
-                <ul style={{ margin: 0, padding: "0 0 0 18px", color: T.ink2, fontSize: 14, lineHeight: 2 }}>
-                  {BENEFICIOS_GRATIS.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
+                <ul style={{ margin: "16px 0 0", padding: "0 0 0 18px", color: T.ink2, fontSize: 14, lineHeight: 2 }}>
+                  {catGratis.beneficios.map((b) => <li key={b}>{b}</li>)}
                 </ul>
               </div>
 
-              {/* Card: upgrade para o pago */}
+              {/* Card: Recorrente — assinar */}
               <div style={{ background: T.ink, borderRadius: 20, padding: "28px 32px" }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: T.coral, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                  {plano ? plano.nome : "Plano Ingressa"}
+                  {plano ? plano.nome : catRecorrente.nome}
                 </p>
-                <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: "#fff", margin: "0 0 4px", letterSpacing: "-0.02em" }}>
+                <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: "#fff", margin: "0 0 20px", letterSpacing: "-0.02em" }}>
                   {plano ? (
                     <>
                       {BRL(plano.preco_cents / 100)}
                       <span style={{ fontSize: 16, fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>/mês</span>
                     </>
                   ) : (
-                    <span style={{ fontSize: 20 }}>Em breve</span>
+                    <>
+                      {catRecorrente.preco}
+                      <span style={{ fontSize: 16, fontWeight: 400, color: "rgba(255,255,255,0.55)" }}>{catRecorrente.unidade}</span>
+                    </>
                   )}
                 </p>
-                {plano && (
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>
-                    Valor placeholder — a validar
-                  </p>
-                )}
                 <ul style={{ margin: "0 0 24px", padding: "0 0 0 18px", color: "rgba(255,255,255,0.75)", fontSize: 14, lineHeight: 2 }}>
-                  {BENEFICIOS_PAGO.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
+                  {catRecorrente.beneficios.map((b) => <li key={b}>{b}</li>)}
                 </ul>
                 {plano ? (
                   <BotaoAssinar planoId={plano.id} dark />
                 ) : (
                   <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: 0 }}>
-                    Em breve — fique atento ao lançamento.
+                    Disponível em breve — fique atento ao lançamento.
                   </p>
                 )}
               </div>
@@ -162,7 +145,7 @@ export default async function PlanoPage() {
           )}
 
           {/* ─────────────────────────────────────────────────── */}
-          {/* ESTADO B: assinatura ativa (ativa / em_graça / pendente / cancelada-com-acesso) */}
+          {/* ESTADO B: assinatura ativa / em_graça / pendente    */}
           {/* ─────────────────────────────────────────────────── */}
           {temPlanoAtivo && (
             <>
@@ -171,7 +154,7 @@ export default async function PlanoPage() {
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
                   <div>
                     <p style={{ fontSize: 13, fontWeight: 700, color: T.coral, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                      {plano?.nome ?? "Plano Ingressa"}
+                      {plano?.nome ?? catRecorrente.nome}
                     </p>
                     <p style={{ fontFamily: fontDisplay, fontSize: 32, fontWeight: 600, color: T.ink, margin: 0, letterSpacing: "-0.02em" }}>
                       {plano ? (
@@ -190,7 +173,7 @@ export default async function PlanoPage() {
                 </div>
 
                 <ul style={{ margin: "0 0 24px", padding: "0 0 0 18px", color: T.ink2, fontSize: 14, lineHeight: 1.9 }}>
-                  {BENEFICIOS_PAGO.map((b) => <li key={b}>{b}</li>)}
+                  {catRecorrente.beneficios.map((b) => <li key={b}>{b}</li>)}
                 </ul>
 
                 {assinatura?.status === "pendente" && (
@@ -252,6 +235,64 @@ export default async function PlanoPage() {
               </div>
             </>
           )}
+
+          {/* ─────────────────────────────────────────────────── */}
+          {/* PRÓXIMOS PLANOS — sempre visíveis, informativos     */}
+          {/* ─────────────────────────────────────────────────── */}
+          <div style={{ paddingTop: 8 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 16px" }}>
+              Próximos planos
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {planoEmBreve.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    background: "#fff",
+                    borderRadius: 16,
+                    border: `1px solid ${T.line}`,
+                    padding: "20px 22px",
+                    position: "relative",
+                    opacity: 0.82,
+                  }}
+                >
+                  <span style={{
+                    position: "absolute", top: 14, right: 14,
+                    fontSize: 10, fontWeight: 700, color: T.ink2,
+                    background: T.surface, border: `1px solid ${T.line}`,
+                    padding: "2px 8px", borderRadius: 99,
+                    letterSpacing: "0.04em", textTransform: "uppercase",
+                  }}>
+                    Em breve
+                  </span>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: T.ink, margin: "0 0 4px", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    {p.nome}
+                  </p>
+                  <p style={{ fontFamily: fontDisplay, fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 2px", letterSpacing: "-0.01em" }}>
+                    {p.preco}
+                  </p>
+                  <p style={{ fontSize: 12, color: T.muted, margin: "0 0 14px" }}>{p.unidade}</p>
+                  <ul style={{ margin: "0 0 16px", padding: "0 0 0 16px", color: T.ink2, fontSize: 13, lineHeight: 1.9 }}>
+                    {p.beneficios.map((b) => <li key={b}>{b}</li>)}
+                  </ul>
+                  <div style={{
+                    display: "block",
+                    textAlign: "center",
+                    padding: "10px",
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: T.muted,
+                    border: `1px solid ${T.line}`,
+                    background: "transparent",
+                    cursor: "default",
+                  }}>
+                    Em breve
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
         </div>
       </main>

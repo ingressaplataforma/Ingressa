@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
 import { T, BRL } from "../../lib/tokens";
+import { PLANOS } from "../../lib/planos-catalogo";
 
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -757,53 +758,6 @@ function Slider({ label, value, min, max, step, onChange, fmt }) {
 }
 
 // ---------- Plans ----------
-const PLANS = [
-  {
-    name: "Grátis",
-    price: "R$ 0",
-    unit: "até 3 eventos",
-    desc: "Crie e publique até 3 eventos sem pagar nada. Inscrições, ingressos com QR e check-in inclusos. Ideal para começar e testar a plataforma.",
-    feats: ["Até 3 eventos", "Inscrições ilimitadas por evento", "Ingresso com QR Code", "Check-in", "Sem cartão de crédito"],
-    cta: "Criar meu primeiro evento",
-    href: "/cadastro",
-    entry: true,   // destaque como ponto de entrada
-    soon: false,
-  },
-  {
-    name: "Avulso",
-    price: "3% no Pix",
-    unit: "a partir de R$ 0,99 por ingresso",
-    desc: "Depois dos 3 gratuitos, pague só pelo que vender. No Pix: 3% (mín. R$ 0,99) — o processamento Pix é grátis e repassamos essa economia. No cartão: 2,5% de serviço + custo real da operadora. Sem mensalidade.",
-    feats: ["Pix: 3% (mín. R$ 0,99), processamento grátis", "Cartão: 2,5% + custo real (2,99%+R$0,49)", "Repasse Pix no próx. dia útil", "Sem mensalidade"],
-    cta: "Começar",
-    href: "/cadastro",
-    entry: false,
-    soon: false,
-  },
-  {
-    name: "Recorrente",
-    price: "a partir de R$ 149",
-    unit: "/mês",
-    desc: "Para quem faz muitos eventos no ano. Mensalidade com taxa de serviço abaixo do avulso; processamento sempre repassado a custo real. Valores finais em definição.",
-    feats: ["Taxa de serviço abaixo do avulso", "Processamento a custo real", "Página de organizador", "Ideal para uso recorrente"],
-    cta: "Avise-me quando lançar",
-    href: "#lista-espera",
-    entry: false,
-    soon: true,
-  },
-  {
-    name: "Pacote",
-    price: "a partir de R$ 0,99",
-    unit: "por ingresso, pré-pago",
-    desc: "Compre inscrições em lote com desconto por volume. Quanto maior o pacote, menor o preço por ingresso. O processamento é repassado a custo à parte.",
-    feats: ["De R$ 1,90 (200) a R$ 0,99 (5.000)", "Créditos válidos por 12 meses", "Processamento a custo à parte", "Melhor para alto volume"],
-    cta: "Avise-me quando lançar",
-    href: "#lista-espera",
-    entry: false,
-    soon: true,
-  },
-];
-
 function PlansStrip() {
   return (
     <section id="precos" style={{ maxWidth: 1240, margin: "0 auto", padding: "clamp(48px,7vw,88px) clamp(20px,5vw,72px)" }}>
@@ -813,41 +767,41 @@ function PlansStrip() {
         sub="Comece com 3 eventos gratuitos — sem cartão, sem aprovação. Quando seu calendário crescer, escolha o plano que cabe no seu ritmo. Sem letra miúda."
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 40 }} className="plans">
-        {PLANS.map((p) => (
+        {PLANOS.map((p) => (
           <div
-            key={p.name}
+            key={p.id}
             style={{
               background: "#fff",
               borderRadius: 20,
               padding: "26px 24px",
-              border: p.entry ? `2px solid ${T.coral}` : `1px solid ${T.line}`,
+              border: p.entrada ? `2px solid ${T.coral}` : `1px solid ${T.line}`,
               position: "relative",
               display: "flex",
               flexDirection: "column",
-              opacity: p.soon ? 0.82 : 1,
+              opacity: p.disponivel ? 1 : 0.82,
             }}
           >
             {/* Badges */}
-            {p.entry && (
+            {p.entrada && (
               <div style={{ position: "absolute", top: -12, left: 20, fontSize: 11, fontWeight: 700, color: "#fff", background: T.coral, padding: "3px 12px", borderRadius: 99, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 Comece aqui
               </div>
             )}
-            {p.soon && (
+            {!p.disponivel && (
               <div style={{ position: "absolute", top: 18, right: 18, fontSize: 11, fontWeight: 700, color: T.ink2, background: T.panel, border: `1px solid ${T.line}`, padding: "3px 10px", borderRadius: 99, letterSpacing: "0.04em", textTransform: "uppercase" }}>
                 Em breve
               </div>
             )}
 
             {/* Título */}
-            <div style={{ fontFamily: fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink, marginBottom: 14 }}>{p.name}</div>
+            <div style={{ fontFamily: fontDisplay, fontSize: 19, fontWeight: 600, color: T.ink, marginBottom: 14 }}>{p.nome}</div>
 
             {/* Preço */}
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontFamily: fontDisplay, fontSize: p.price.startsWith("a partir") ? 22 : 34, fontWeight: 700, color: T.ink, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-                {p.price}
+              <div style={{ fontFamily: fontDisplay, fontSize: p.preco.startsWith("a partir") ? 22 : 34, fontWeight: 700, color: T.ink, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                {p.preco}
               </div>
-              <div style={{ fontSize: 13, color: T.muted, marginTop: 3 }}>{p.unit}</div>
+              <div style={{ fontSize: 13, color: T.muted, marginTop: 3 }}>{p.unidade}</div>
             </div>
 
             {/* Descrição */}
@@ -855,7 +809,7 @@ function PlansStrip() {
 
             {/* Itens */}
             <div style={{ display: "flex", flexDirection: "column", gap: 9, marginBottom: 22, flexGrow: 1 }}>
-              {p.feats.map((f) => (
+              {p.beneficios.map((f) => (
                 <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 9, fontSize: 13.5, color: T.ink2 }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
                     <circle cx="12" cy="12" r="12" fill="#E9FBF4"/>
@@ -868,7 +822,7 @@ function PlansStrip() {
 
             {/* CTA */}
             <a
-              href={p.href}
+              href={p.hrefLanding}
               style={{
                 display: "block",
                 width: "100%",
@@ -880,14 +834,14 @@ function PlansStrip() {
                 fontSize: 14,
                 fontWeight: 600,
                 fontFamily: fontBody,
-                ...(p.entry
+                ...(p.entrada
                   ? { background: T.coral, color: "#fff", border: "none" }
-                  : p.soon
+                  : !p.disponivel
                     ? { background: "transparent", color: T.ink2, border: `1px solid ${T.line}` }
                     : { background: T.ink, color: "#fff", border: "none" }),
               }}
             >
-              {p.cta}
+              {p.ctaLanding}
             </a>
           </div>
         ))}
