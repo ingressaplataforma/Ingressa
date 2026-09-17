@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { T } from "@/lib/tokens";
+import { CATEGORIAS } from "@/lib/categorias";
 import ImagemCapa from "../ImagemCapa";
 import MeiosPagamento from "../MeiosPagamento";
 
@@ -14,7 +15,7 @@ const LOTE_VAZIO = () => ({ id: crypto.randomUUID(), nome: "", preco: "0", quant
 
 export default function NovoEventoPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null, aceita_cartao: true, aceita_boleto: false, quem_paga_taxa: "comprador" });
+  const [form, setForm] = useState({ titulo: "", descricao: "", local_nome: "", cep: "", endereco: "", uf: "", data_inicio: "", data_fim: "", visibilidade: "publico", senha: "", imagem_url: null, aceita_cartao: true, aceita_boleto: false, quem_paga_taxa: "comprador", categoria: "outro" });
   const [lotes, setLotes] = useState([LOTE_VAZIO()]);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -36,7 +37,7 @@ export default function NovoEventoPage() {
         const data = await res.json();
         if (!data.erro) {
           const partes = [data.logradouro, data.bairro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : ""].filter(Boolean);
-          setForm((f) => ({ ...f, endereco: partes.join(", ") }));
+          setForm((f) => ({ ...f, endereco: partes.join(", "), uf: data.uf ?? f.uf }));
         }
       } catch { /* ignora falhas de rede */ }
       setBuscandoCep(false);
@@ -82,6 +83,8 @@ export default function NovoEventoPage() {
         local_nome: form.local_nome,
         cep: form.cep,
         endereco: form.endereco,
+        uf: form.uf || null,
+        categoria: form.categoria,
         data_inicio: form.data_inicio,
         data_fim: form.data_fim,
         visibilidade: form.visibilidade,
@@ -124,6 +127,19 @@ export default function NovoEventoPage() {
           {/* Dados do evento */}
           <Secao titulo="Dados do evento">
             <Campo label="Título *" type="text" value={form.titulo} onChange={setF("titulo")} required />
+            <div style={{ marginBottom: 18 }}>
+              <label style={labelStyle}>Categoria *</label>
+              <select
+                value={form.categoria}
+                onChange={setF("categoria")}
+                required
+                style={{ width: "100%", height: 46, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 14px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+              >
+                {CATEGORIAS.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
             <ImagemCapa
               valorAtual={form.imagem_url}
               onChange={(path) => setForm((f) => ({ ...f, imagem_url: path }))}

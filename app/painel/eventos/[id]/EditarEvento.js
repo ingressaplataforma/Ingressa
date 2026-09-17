@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { T } from "@/lib/tokens";
+import { CATEGORIAS } from "@/lib/categorias";
 import ImagemCapa from "../ImagemCapa";
 import MeiosPagamento from "../MeiosPagamento";
 
@@ -40,6 +41,8 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
     local_nome: eventoInicial.local_nome ?? "",
     cep: eventoInicial.cep ? `${eventoInicial.cep.slice(0, 5)}-${eventoInicial.cep.slice(5)}` : "",
     endereco: eventoInicial.endereco ?? "",
+    uf: eventoInicial.uf ?? "",
+    categoria: eventoInicial.categoria ?? "outro",
     data_inicio: eventoInicial.data_inicio ? eventoInicial.data_inicio.slice(0, 16) : "",
     data_fim: eventoInicial.data_fim ? eventoInicial.data_fim.slice(0, 16) : "",
     visibilidade: eventoInicial.visibilidade ?? "publico",
@@ -62,7 +65,7 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
         const data = await res.json();
         if (!data.erro) {
           const partes = [data.logradouro, data.bairro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : ""].filter(Boolean);
-          setForm((f) => ({ ...f, endereco: partes.join(", ") }));
+          setForm((f) => ({ ...f, endereco: partes.join(", "), uf: data.uf ?? f.uf }));
         }
       } catch { /* degrada para preenchimento manual */ }
       setBuscandoCep(false);
@@ -148,6 +151,19 @@ export default function EditarEvento({ eventoId, eventoInicial, lotesIniciais })
         <div style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "22px 24px", marginBottom: 16 }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: T.muted, margin: "0 0 16px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Dados do evento</p>
           <Campo label="Título *" type="text" value={form.titulo} onChange={setF("titulo")} required />
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>Categoria *</label>
+            <select
+              value={form.categoria}
+              onChange={setF("categoria")}
+              required
+              style={{ width: "100%", height: 44, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 13px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+            >
+              {CATEGORIAS.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
           <ImagemCapa
             valorAtual={form.imagem_url}
             onChange={(path) => setForm((f) => ({ ...f, imagem_url: path }))}

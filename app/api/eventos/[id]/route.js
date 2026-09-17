@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createClient } from "@/lib/supabase/server";
+import { CATEGORIA_VALORES } from "@/lib/categorias";
 
 export async function PATCH(request, { params }) {
   const { id } = await params;
@@ -21,7 +22,7 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ erro: "Evento não está em modo editável." }, { status: 409 });
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, lotes_update, lotes_add, lotes_remove } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, uf, categoria, data_inicio, data_fim, visibilidade, senha, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, lotes_update, lotes_add, lotes_remove } = await request.json();
 
   // ── Bloqueio de duplicado ao editar título ou data ──
   const novoTitulo = titulo != null ? titulo.trim() : evento.titulo;
@@ -61,6 +62,10 @@ export async function PATCH(request, { params }) {
   if (local_nome != null) upd.local_nome = local_nome.trim() || null;
   if (cep != null) upd.cep = cep.replace(/\D/g, "").slice(0, 8) || null;
   if (endereco != null) upd.endereco = endereco.trim() || null;
+  if (uf !== undefined) upd.uf = uf ? uf.toUpperCase().slice(0, 2) : null;
+  if (categoria != null) {
+    upd.categoria = CATEGORIA_VALORES.includes(categoria) ? categoria : "outro";
+  }
   if (data_inicio) upd.data_inicio = data_inicio;
   if (data_fim !== undefined) upd.data_fim = data_fim || null;
   if (visibilidade) upd.visibilidade = visibilidade;

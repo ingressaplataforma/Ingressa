@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { createClient } from "@/lib/supabase/server";
 import { gerarSlugUnico } from "@/lib/slug";
 import { organizadorTemPlanoAtivo } from "@/lib/planos";
+import { CATEGORIA_VALORES } from "@/lib/categorias";
 
 // Extrai a parte de data (YYYY-MM-DD) de uma string datetime-local ou ISO.
 function soDia(dtStr) {
@@ -36,7 +37,9 @@ export async function POST(request) {
     }
   }
 
-  const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes, aceita_cartao, aceita_boleto, quem_paga_taxa } = await request.json();
+  const { titulo, descricao, local_nome, cep, endereco, uf, categoria, data_inicio, data_fim, visibilidade, senha, imagem_url, lotes, aceita_cartao, aceita_boleto, quem_paga_taxa } = await request.json();
+
+  const categoriaFinal = CATEGORIA_VALORES.includes(categoria) ? categoria : "outro";
 
   // ── Bloqueio de duplicado: mesmo organizador, mesmo título (case-insensitive), mesma data ──
   const dia = soDia(data_inicio);
@@ -80,6 +83,8 @@ export async function POST(request) {
       local_nome: local_nome?.trim() || null,
       cep: cep?.replace(/\D/g, "").slice(0, 8) || null,
       endereco: endereco?.trim() || null,
+      uf: uf ? uf.toUpperCase().slice(0, 2) : null,
+      categoria: categoriaFinal,
       data_inicio,
       data_fim: data_fim || null,
       slug,
