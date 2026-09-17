@@ -11,7 +11,7 @@ export async function PATCH(request, { params }) {
   // Verifica propriedade + estado editável
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, status, senha_hash")
+    .select("id, status, senha_hash, titulo, data_inicio")
     .eq("id", id)
     .eq("organizador_id", user.id)
     .maybeSingle();
@@ -22,6 +22,37 @@ export async function PATCH(request, { params }) {
   }
 
   const { titulo, descricao, local_nome, cep, endereco, data_inicio, data_fim, visibilidade, senha, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, lotes_update, lotes_add, lotes_remove } = await request.json();
+
+  // ── Bloqueio de duplicado ao editar título ou data ──
+  const novoTitulo = titulo != null ? titulo.trim() : evento.titulo;
+  const novaDataInicio = data_inicio || evento.data_inicio;
+  const tituloMudou = titulo != null && titulo.trim().toLowerCase() !== evento.titulo.toLowerCase();
+  const dataMudou = data_inicio && data_inicio !== evento.data_inicio;
+
+  if (tituloMudou || dataMudou) {
+    const dia = novaDataInicio.split("T")[0];
+    const proximoDia = new Date(dia);
+    proximoDia.setDate(proximoDia.getDate() + 1);
+    const proximoDiaStr = proximoDia.toISOString().split("T")[0];
+
+    const { data: duplicado } = await supabase
+      .from("evento")
+      .select("id")
+      .eq("organizador_id", user.id)
+      .ilike("titulo", novoTitulo)
+      .gte("data_inicio", `${dia}T00:00:00`)
+      .lt("data_inicio", `${proximoDiaStr}T00:00:00`)
+      .neq("id", id)
+      .limit(1)
+      .maybeSingle();
+
+    if (duplicado) {
+      return NextResponse.json(
+        { erro: "Você já tem um evento com esse nome nessa data." },
+        { status: 409 }
+      );
+    }
+  }
 
   // Atualiza campos do evento
   const upd = {};
