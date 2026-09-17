@@ -70,13 +70,12 @@ function Nav() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "14px clamp(16px,5vw,72px)", maxWidth: 1240, margin: "0 auto",
       }}>
-        {/* Logo — idêntico ao /painel: width=130, height=auto, flexShrink=0 */}
         <a
           href="/"
           onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }}
-          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
+          style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0, minWidth: 130 }}
         >
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} priority />
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} priority />
         </a>
 
         {/* Desktop nav */}
@@ -978,9 +977,8 @@ function Footer() {
   return (
     <footer style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "40px clamp(20px,5vw,72px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-        {/* Wrapper com flexShrink:0 para o logo nunca encolher no flex container */}
-        <div style={{ flexShrink: 0, lineHeight: 0 }}>
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto" }} />
+        <div style={{ flexShrink: 0, minWidth: 130, lineHeight: 0 }}>
+          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} />
         </div>
         <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>
