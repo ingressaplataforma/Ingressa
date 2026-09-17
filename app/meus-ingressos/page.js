@@ -25,7 +25,7 @@ export default async function MeusIngressosPage() {
 
   const { data: ingressos } = await supabase
     .from("ingresso")
-    .select("id, codigo, token_assinado, status, criado_em, lote:lote_id(nome), evento:evento_id(titulo, data_inicio, local_nome, slug)")
+    .select("id, codigo, token_assinado, status, criado_em, dono_nome, lote:lote_id(nome), evento:evento_id(titulo, data_inicio, local_nome, slug)")
     .eq("comprador_id", user.id)
     .order("criado_em", { ascending: false });
 

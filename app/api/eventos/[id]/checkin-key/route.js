@@ -23,14 +23,14 @@ export async function GET(request, { params }) {
   // Busca ingressos com nome, email e lote (para cache offline e busca manual)
   const { data: ingressos } = await supabase
     .from("ingresso")
-    .select("codigo, status, usado_em, lote:lote_id(nome), comprador:comprador_id(nome, email)")
+    .select("codigo, status, usado_em, dono_nome, dono_email, lote:lote_id(nome), comprador:comprador_id(nome, email)")
     .eq("evento_id", id)
     .order("criado_em", { ascending: true });
 
   const lista = (ingressos ?? []).map((ing) => ({
     codigo: ing.codigo,
-    nome: ing.comprador?.nome ?? "",
-    email: ing.comprador?.email ?? "",
+    nome: ing.dono_nome ?? ing.comprador?.nome ?? "",
+    email: ing.dono_email ?? ing.comprador?.email ?? "",
     lote: ing.lote?.nome ?? "",
     status: ing.status,
     usado_em: ing.usado_em ?? null,

@@ -45,6 +45,11 @@ export default function CarteiraClient({ ingressos }) {
                   {ing.status === "usado" && <span style={{ color: T.mint, marginLeft: 8 }}>· Utilizado</span>}
                 </p>
                 <p style={{ fontSize: 17, fontWeight: 600, color: T.ink, margin: "0 0 4px", fontFamily: fontDisplay }}>{evento.titulo}</p>
+                {ing.dono_nome && (
+                  <p style={{ fontSize: 13, fontWeight: 600, color: T.ink2, margin: "0 0 2px" }}>
+                    🎫 {ing.dono_nome}
+                  </p>
+                )}
                 <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
                   {dataFormatada}
                   {evento.local_nome && ` · ${evento.local_nome}`}

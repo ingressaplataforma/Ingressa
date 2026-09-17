@@ -27,10 +27,25 @@ export default async function InscricaoPage({ params }) {
 
   const { data: { user } } = await supabase.auth.getUser();
   let temComprador = false;
+  let compradorDados = null;
   if (user) {
-    const { data: comp } = await supabase.from("comprador").select("id").eq("id", user.id).maybeSingle();
+    const { data: comp } = await supabase
+      .from("comprador")
+      .select("id, nome, cpf, telefone")
+      .eq("id", user.id)
+      .maybeSingle();
     temComprador = !!comp;
+    if (comp) {
+      compradorDados = {
+        nome: comp.nome || "",
+        cpf: comp.cpf || "",
+        email: user.email || "",
+        telefone: comp.telefone || "",
+      };
+    }
   }
+
+  const disponivel = lote.quantidade_total - lote.quantidade_vendida;
 
   // Gratuito → fluxo de inscrição imediata existente
   if (lote.preco_cents === 0) {
@@ -46,6 +61,8 @@ export default async function InscricaoPage({ params }) {
         localNome={lote.evento.local_nome}
         esgotado={esgotado}
         temComprador={temComprador}
+        compradorDados={compradorDados}
+        disponivel={disponivel}
       />
     );
   }
