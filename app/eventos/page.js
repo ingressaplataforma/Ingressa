@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
+
 import { createClient } from "@/lib/supabase/server";
 import { T, BRL } from "@/lib/tokens";
 
@@ -23,7 +23,7 @@ export default async function EventosPage() {
       <nav style={{ borderBottom: `1px solid ${T.line}`, background: "#fff", padding: "0 clamp(20px,5vw,48px)" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ display: "inline-flex", alignItems: "center", textDecoration: "none", flexShrink: 0, minWidth: 130 }}>
-            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} />
+            <img src="/ingressa_logo_header.png" alt="Ingressa" width={130} style={{ display: "block", height: "auto" }} />
           </Link>
           <Link href="/entrar" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>Entrar</Link>
         </div>

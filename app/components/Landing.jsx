@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import Image from "next/image";
 import { T, BRL } from "../../lib/tokens";
 import { PLANOS } from "../../lib/planos-catalogo";
 
@@ -76,7 +75,7 @@ function Nav() {
           onClick={(e) => { e.preventDefault(); setMenuOpen(false); window.scrollTo({ top: 0, behavior: "smooth" }); window.history.pushState(null, "", "/"); }}
           style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0, minWidth: 130 }}
         >
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} priority />
+          <img src="/ingressa_logo_header.png" alt="Ingressa" width={130} style={{ display: "block", height: "auto" }} />
         </a>
 
         {/* Desktop nav */}
@@ -932,7 +931,7 @@ function Footer() {
     <footer style={{ background: T.panel, borderTop: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "40px clamp(20px,5vw,72px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
         <div style={{ flexShrink: 0, minWidth: 130, lineHeight: 0 }}>
-          <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} />
+          <img src="/ingressa_logo_header.png" alt="Ingressa" width={130} style={{ display: "block", height: "auto" }} />
         </div>
         <span style={{ fontSize: 13.5, color: T.muted }}>© {new Date().getFullYear()} Ingressa</span>
       </div>

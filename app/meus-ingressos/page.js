@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+
 import { createClient } from "@/lib/supabase/server";
 import CarteiraClient from "./CarteiraClient";
 import LogoutButton from "@/app/painel/LogoutButton";
@@ -34,7 +34,7 @@ export default async function MeusIngressosPage() {
       <header style={{ borderBottom: `1px solid ${T.line}`, background: "#fff" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto", padding: "16px clamp(20px,5vw,48px)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Link href="/" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", flexShrink: 0, minWidth: 130 }}>
-            <Image src="/ingressa_logo_header.png" alt="Ingressa" width={130} height={43} style={{ width: 130, height: "auto", display: "block" }} />
+            <img src="/ingressa_logo_header.png" alt="Ingressa" width={130} style={{ display: "block", height: "auto" }} />
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
             {temPerfilOrganizador && (
