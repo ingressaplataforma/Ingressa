@@ -53,11 +53,24 @@ export async function POST(request, { params }) {
   }
 
   const r = data;
+
+  // Busca email do participante para exibição no check-in
+  let emailParticipante = null;
+  if (r.resultado === "ok" || r.resultado === "ja_usado") {
+    const { data: ingRow } = await supabase
+      .from("ingresso")
+      .select("comprador:comprador_id(email)")
+      .eq("codigo", codigo)
+      .eq("evento_id", id)
+      .maybeSingle();
+    emailParticipante = ingRow?.comprador?.email ?? null;
+  }
+
   if (r.resultado === "ok") {
-    return NextResponse.json({ resultado: "ok", nome: r.nome, lote: r.lote });
+    return NextResponse.json({ resultado: "ok", nome: r.nome, email: emailParticipante, lote: r.lote });
   }
   if (r.resultado === "ja_usado") {
-    return NextResponse.json({ resultado: "ja_usado", nome: r.nome, lote: r.lote, usado_em: r.usado_em });
+    return NextResponse.json({ resultado: "ja_usado", nome: r.nome, email: emailParticipante, lote: r.lote, usado_em: r.usado_em });
   }
   if (r.resultado === "nao_encontrado") {
     return NextResponse.json({ resultado: "invalido", motivo: MOTIVOS.nao_encontrado });

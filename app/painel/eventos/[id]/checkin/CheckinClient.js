@@ -199,7 +199,7 @@ function tocar(tipo) {
 }
 
 // ─── Componente de resultado ──────────────────────────────────────────
-function Resultado({ r, offline }) {
+function Resultado({ r }) {
   if (!r) return null;
   const cfg = {
     ok:         { bg: "#E8FBF4", border: "#00C896", icon: "✓", titulo: "Entrada liberada", cor: "#00734F" },
@@ -212,8 +212,9 @@ function Resultado({ r, offline }) {
     <div style={{ background: c.bg, border: `2px solid ${c.border}`, borderRadius: 16, padding: "24px 28px", textAlign: "center", boxShadow: "0 4px 20px rgba(0,0,0,.12)" }}>
       <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 8 }}>{c.icon}</div>
       <p style={{ fontSize: 22, fontWeight: 700, color: c.cor, margin: "0 0 6px", fontFamily: fontDisplay }}>{c.titulo}</p>
-      {r.nome && <p style={{ fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 4px" }}>{r.nome}</p>}
-      {r.lote && <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>{r.lote}</p>}
+      {r.nome && <p style={{ fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 2px" }}>{r.nome}</p>}
+      {r.email && <p style={{ fontSize: 14, color: T.muted, margin: "0 0 4px" }}>{r.email}</p>}
+      {r.lote && <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{r.lote}</p>}
       {r.usadoEm && <p style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>às {r.usadoEm}</p>}
       {r.motivo && <p style={{ fontSize: 14, color: c.cor, marginTop: 8 }}>{r.motivo}</p>}
     </div>
@@ -321,11 +322,11 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
         });
         const json = await res.json();
         if (json.resultado === "ok") {
-          r = { tipo: "ok", nome: json.nome, lote: json.lote };
+          r = { tipo: "ok", nome: json.nome, email: json.email, lote: json.lote };
           setPresentes((p) => p + 1);
         } else if (json.resultado === "ja_usado") {
           const h = json.usado_em ? new Date(json.usado_em).toLocaleTimeString("pt-BR") : "—";
-          r = { tipo: "ja_usado", nome: json.nome, lote: json.lote, usadoEm: h };
+          r = { tipo: "ja_usado", nome: json.nome, email: json.email, lote: json.lote, usadoEm: h };
         } else {
           r = { tipo: "invalido", motivo: json.motivo ?? "Ingresso inválido" };
         }
@@ -361,7 +362,7 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
               setSyncPendente((n) => n + 1);
               // Atualiza lista local em memória
               setListaLocal((ls) => ls.map((i) => i.codigo === codigo ? { ...i, status: "usado" } : i));
-              r = { tipo: "offline_ok", nome: ing.nome, lote: ing.lote };
+              r = { tipo: "offline_ok", nome: ing.nome, email: ing.email, lote: ing.lote };
             }
           }
         }
@@ -433,9 +434,13 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
     };
   }, [modo, processarCodigo]);
 
-  // ── Busca manual ───────────────────────────────────────────────────
-  const ingressosFiltrados = busca.trim().length >= 2
-    ? listaLocal.filter((i) => i.nome.toLowerCase().includes(busca.toLowerCase()))
+  // ── Busca manual (por nome ou e-mail) ─────────────────────────────
+  const buscaNorm = busca.trim().toLowerCase();
+  const ingressosFiltrados = buscaNorm.length >= 2
+    ? listaLocal.filter((i) =>
+        i.nome.toLowerCase().includes(buscaNorm) ||
+        (i.email && i.email.toLowerCase().includes(buscaNorm))
+      )
     : listaLocal.slice(0, 20);
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -532,7 +537,7 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nome…"
+              placeholder="Buscar por nome ou e-mail…"
               style={{ width: "100%", boxSizing: "border-box", height: 48, borderRadius: 12, border: `1px solid ${T.line}`, padding: "0 16px", fontSize: 16, fontFamily: fontBody, color: T.ink, background: "#fff", outline: "none", marginBottom: 16 }}
             />
             {resultado && <div style={{ marginBottom: 16 }}><Resultado r={resultado} /></div>}
@@ -543,7 +548,8 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
                   style={{ background: "#fff", border: `1px solid ${T.line}`, borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}
                 >
                   <div style={{ minWidth: 0 }}>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.nome || "—"}</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: T.ink, margin: "0 0 1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.nome || "—"}</p>
+                    {ing.email && <p style={{ fontSize: 12, color: T.muted, margin: "0 0 1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.email}</p>}
                     <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{ing.lote}</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
@@ -563,7 +569,7 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
                   </div>
                 </div>
               ))}
-              {ingressosFiltrados.length === 0 && busca.length >= 2 && (
+              {ingressosFiltrados.length === 0 && buscaNorm.length >= 2 && (
                 <p style={{ fontSize: 14, color: T.muted, textAlign: "center", padding: "24px 0" }}>Nenhum participante encontrado.</p>
               )}
               {listaLocal.length === 0 && (

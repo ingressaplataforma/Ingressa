@@ -11,14 +11,51 @@ import { T } from "@/lib/tokens";
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
+// ── Máscaras ──────────────────────────────────────────────────────────
+function mascaraCPF(valor) {
+  const d = valor.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+function mascaraTelefone(valor) {
+  const d = valor.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
+// ── Validação de CPF (dígitos verificadores) ──────────────────────────
+function validarCPF(cpf) {
+  const d = cpf.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(d)) return false;
+  let s1 = 0;
+  for (let i = 0; i < 9; i++) s1 += parseInt(d[i]) * (10 - i);
+  let r1 = s1 % 11;
+  if (r1 < 2) r1 = 0; else r1 = 11 - r1;
+  if (r1 !== parseInt(d[9])) return false;
+  let s2 = 0;
+  for (let i = 0; i < 10; i++) s2 += parseInt(d[i]) * (11 - i);
+  let r2 = s2 % 11;
+  if (r2 < 2) r2 = 0; else r2 = 11 - r2;
+  return r2 === parseInt(d[10]);
+}
+
 export default function CadastroCompradorPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ nome: "", email: "", senha: "" });
+  const [form, setForm] = useState({ nome: "", email: "", senha: "", cpf: "", telefone: "" });
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [usuarioLogado, setUsuarioLogado] = useState(null);
   const [adicionando, setAdicionando] = useState(false);
+  const [cpfAdicionar, setCpfAdicionar] = useState("");
+  const [telefoneAdicionar, setTelefoneAdicionar] = useState("");
 
   useEffect(() => {
     async function checarSessao() {
@@ -29,34 +66,69 @@ export default function CadastroCompradorPage() {
     checarSessao();
   }, []);
 
-  function set(campo) {
+  function setcampo(campo) {
     return (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
   }
 
-  // Usuário já logado quer adicionar o perfil de comprador
-  async function handleAdicionarPerfil() {
+  function setCpf(e) {
+    setForm((f) => ({ ...f, cpf: mascaraCPF(e.target.value) }));
+  }
+
+  function setTelefone(e) {
+    setForm((f) => ({ ...f, telefone: mascaraTelefone(e.target.value) }));
+  }
+
+  // ── Usuário já logado: adicionar perfil de comprador ─────────────────
+  async function handleAdicionarPerfil(e) {
+    e.preventDefault();
     setErro("");
+
+    if (!validarCPF(cpfAdicionar)) {
+      setErro("CPF inválido. Verifique os dígitos e tente novamente.");
+      return;
+    }
+
     setAdicionando(true);
     const supabase = createClient();
+    const cpfSoDigitos = cpfAdicionar.replace(/\D/g, "");
+    const telefoneSoDigitos = telefoneAdicionar.replace(/\D/g, "") || null;
+
     const { error } = await supabase.from("comprador").upsert({
       id: usuarioLogado.id,
       nome: usuarioLogado.user_metadata?.nome || usuarioLogado.email.split("@")[0],
+      email: usuarioLogado.email,
+      cpf: cpfSoDigitos,
+      telefone: telefoneSoDigitos,
     });
+
     if (error) {
-      setErro("Erro ao adicionar perfil: " + error.message);
+      setErro(
+        error.message?.includes("comprador_cpf_unique")
+          ? "Este CPF já está cadastrado em outra conta."
+          : error.message?.includes("comprador_cpf_valido")
+          ? "CPF inválido — verifique os dígitos."
+          : "Erro ao adicionar perfil: " + error.message
+      );
       setAdicionando(false);
       return;
     }
+
     router.push("/meus-ingressos");
     router.refresh();
   }
 
+  // ── Novo cadastro ─────────────────────────────────────────────────────
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
     setMensagem("");
-    setCarregando(true);
 
+    if (!validarCPF(form.cpf)) {
+      setErro("CPF inválido. Verifique os dígitos e tente novamente.");
+      return;
+    }
+
+    setCarregando(true);
     const supabase = createClient();
 
     const { data, error } = await supabase.auth.signUp({
@@ -78,11 +150,28 @@ export default function CadastroCompradorPage() {
       return;
     }
 
+    const cpfSoDigitos = form.cpf.replace(/\D/g, "");
+    const telefoneSoDigitos = form.telefone.replace(/\D/g, "") || null;
+
     if (data.session) {
-      await supabase.from("comprador").upsert({
+      const { error: upsertErr } = await supabase.from("comprador").upsert({
         id: data.user.id,
         nome: form.nome,
+        email: form.email,
+        cpf: cpfSoDigitos,
+        telefone: telefoneSoDigitos,
       });
+      if (upsertErr) {
+        setErro(
+          upsertErr.message?.includes("comprador_cpf_unique")
+            ? "Este CPF já está cadastrado em outra conta."
+            : upsertErr.message?.includes("comprador_cpf_valido")
+            ? "CPF inválido — verifique os dígitos."
+            : "Não foi possível salvar o perfil: " + upsertErr.message
+        );
+        setCarregando(false);
+        return;
+      }
       router.push("/meus-ingressos");
       router.refresh();
     } else {
@@ -91,6 +180,7 @@ export default function CadastroCompradorPage() {
     }
   }
 
+  // ── Tela de confirmação ───────────────────────────────────────────────
   if (mensagem) {
     return (
       <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
@@ -108,7 +198,7 @@ export default function CadastroCompradorPage() {
     );
   }
 
-  // Usuário já logado: oferecer adicionar perfil de comprador
+  // ── Usuário já logado: formulário para adicionar CPF ─────────────────
   if (usuarioLogado) {
     return (
       <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
@@ -116,32 +206,50 @@ export default function CadastroCompradorPage() {
           <Link href="/" style={{ display: "flex", justifyContent: "center", textDecoration: "none", marginBottom: 36 }}>
             <Image src="/ingressa_logo.png" alt="Ingressa" width={216} height={72} style={{ width: 160, height: "auto" }} priority />
           </Link>
-          <div style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "clamp(28px,5vw,40px)", boxShadow: "0 20px 40px -24px rgba(26,16,53,0.18)", textAlign: "center" }}>
-            <div style={{ fontSize: 40, marginBottom: 16 }}>🎟️</div>
-            <h1 style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 600, color: T.ink, margin: "0 0 10px" }}>
+          <div style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "clamp(28px,5vw,40px)", boxShadow: "0 20px 40px -24px rgba(26,16,53,0.18)" }}>
+            <div style={{ fontSize: 40, marginBottom: 16, textAlign: "center" }}>🎟️</div>
+            <h1 style={{ fontFamily: fontDisplay, fontSize: 22, fontWeight: 600, color: T.ink, margin: "0 0 10px", textAlign: "center" }}>
               Adicionar perfil de comprador
             </h1>
-            <p style={{ fontSize: 15, color: T.muted, margin: "0 0 24px", lineHeight: 1.55 }}>
-              Você já está logado. Clique abaixo para habilitar a compra de ingressos na sua conta.
+            <p style={{ fontSize: 15, color: T.muted, margin: "0 0 24px", lineHeight: 1.55, textAlign: "center" }}>
+              Você já está logado. Informe seu CPF para habilitar a compra de ingressos.
             </p>
             {erro && (
               <div style={{ background: "#FFF0F0", border: `1px solid #FFD0D0`, borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#C0392B", marginBottom: 18 }}>
                 {erro}
               </div>
             )}
-            <button
-              onClick={handleAdicionarPerfil}
-              disabled={adicionando}
-              style={{ width: "100%", padding: "14px", background: adicionando ? T.muted : T.coral, color: "#fff", border: "none", borderRadius: 11, fontSize: 16, fontWeight: 600, cursor: adicionando ? "not-allowed" : "pointer", fontFamily: fontBody }}
-            >
-              {adicionando ? "Adicionando…" : "Habilitar compra de ingressos"}
-            </button>
+            <form onSubmit={handleAdicionarPerfil}>
+              <CampoMascarado
+                label="CPF"
+                placeholder="000.000.000-00"
+                value={cpfAdicionar}
+                onChange={(e) => setCpfAdicionar(mascaraCPF(e.target.value))}
+                required
+                inputMode="numeric"
+              />
+              <CampoMascarado
+                label="Telefone (opcional)"
+                placeholder="(00) 00000-0000"
+                value={telefoneAdicionar}
+                onChange={(e) => setTelefoneAdicionar(mascaraTelefone(e.target.value))}
+                inputMode="tel"
+              />
+              <button
+                type="submit"
+                disabled={adicionando}
+                style={{ width: "100%", padding: "14px", background: adicionando ? T.muted : T.coral, color: "#fff", border: "none", borderRadius: 11, fontSize: 16, fontWeight: 600, cursor: adicionando ? "not-allowed" : "pointer", fontFamily: fontBody }}
+              >
+                {adicionando ? "Adicionando…" : "Habilitar compra de ingressos"}
+              </button>
+            </form>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Formulário principal (novo cadastro) ──────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
       <div style={{ width: "100%", maxWidth: 480 }}>
@@ -160,10 +268,26 @@ export default function CadastroCompradorPage() {
           <BotaoGoogle label="Cadastrar com Google" role="comprador" />
 
           <form onSubmit={handleSubmit}>
-            <Campo label="Nome completo" type="text" value={form.nome} onChange={set("nome")} required />
+            <Campo label="Nome completo" type="text" value={form.nome} onChange={setcampo("nome")} required />
             <div style={{ height: 1, background: T.line, margin: "0 0 18px" }} />
-            <Campo label="E-mail" type="email" value={form.email} onChange={set("email")} required />
-            <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={set("senha")} required minLength={6} />
+            <CampoMascarado
+              label="CPF"
+              placeholder="000.000.000-00"
+              value={form.cpf}
+              onChange={setCpf}
+              required
+              inputMode="numeric"
+            />
+            <CampoMascarado
+              label="Telefone (opcional)"
+              placeholder="(00) 00000-0000"
+              value={form.telefone}
+              onChange={setTelefone}
+              inputMode="tel"
+            />
+            <div style={{ height: 1, background: T.line, margin: "0 0 18px" }} />
+            <Campo label="E-mail" type="email" value={form.email} onChange={setcampo("email")} required />
+            <Campo label="Senha (mín. 6 caracteres)" type="password" value={form.senha} onChange={setcampo("senha")} required minLength={6} />
 
             {erro && (
               <div style={{ background: "#FFF0F0", border: `1px solid #FFD0D0`, borderRadius: 10, padding: "10px 14px", fontSize: 14, color: "#C0392B", marginBottom: 18 }}>
@@ -213,6 +337,25 @@ function Campo({ label, type, value, onChange, required, minLength }) {
         onChange={onChange}
         required={required}
         minLength={minLength}
+        style={{ width: "100%", boxSizing: "border-box", height: 46, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 14px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
+      />
+    </div>
+  );
+}
+
+function CampoMascarado({ label, placeholder, value, onChange, required, inputMode }) {
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <label style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: T.ink2, marginBottom: 6 }}>
+        {label}
+      </label>
+      <input
+        type="text"
+        inputMode={inputMode}
+        value={value}
+        onChange={onChange}
+        required={required}
+        placeholder={placeholder}
         style={{ width: "100%", boxSizing: "border-box", height: 46, borderRadius: 10, border: `1px solid ${T.line}`, padding: "0 14px", fontSize: 15, fontFamily: fontBody, color: T.ink, background: T.surface, outline: "none" }}
       />
     </div>
