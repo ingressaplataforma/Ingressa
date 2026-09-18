@@ -62,12 +62,26 @@ export async function POST(request) {
   // Normaliza CPFs (só dígitos)
   const cpfNorm = (v) => (v ? v.replace(/\D/g, "") : null);
 
-  const donosNorm = donos.map((d, i) => ({
-    nome: i === 0 ? (d.nome || comprador.nome).trim() : d.nome.trim(),
-    cpf: cpfNorm(i === 0 ? (d.cpf || comprador.cpf) : d.cpf) || null,
-    email: (i === 0 ? (d.email || user.email) : d.email).trim().toLowerCase(),
-    telefone: d.telefone?.replace(/\D/g, "") || null,
-  }));
+  // Para o 1º ingresso, o CPF do comprador vem SEMPRE do banco (fonte autoritativa).
+  // O cliente pode enviar vazio ou null — o que importa é o comprador.cpf da DB.
+  const cpfComprador = cpfNorm(comprador.cpf) || null;
+
+  const donosNorm = donos.map((d, i) => {
+    if (i === 0) {
+      return {
+        nome: (d.nome || comprador.nome).trim(),
+        cpf: cpfComprador,
+        email: (d.email || user.email).trim().toLowerCase(),
+        telefone: d.telefone?.replace(/\D/g, "") || null,
+      };
+    }
+    return {
+      nome: d.nome.trim(),
+      cpf: cpfNorm(d.cpf) || null,
+      email: d.email.trim().toLowerCase(),
+      telefone: d.telefone?.replace(/\D/g, "") || null,
+    };
+  });
 
   // Sem CPF duplicado dentro do próprio pedido
   const cpfsNoPedido = donosNorm.map((d) => d.cpf).filter(Boolean);
@@ -76,8 +90,7 @@ export async function POST(request) {
     return NextResponse.json({ erro: "Dois ingressos com o mesmo CPF no mesmo pedido." }, { status: 422 });
   }
 
-  // Extra com CPF do próprio comprador — bloqueado
-  const cpfComprador = cpfNorm(comprador.cpf);
+  // Extra com CPF do próprio comprador — bloqueado (o 1º ingresso já é dele)
   for (let i = 1; i < donosNorm.length; i++) {
     if (donosNorm[i].cpf && cpfComprador && donosNorm[i].cpf === cpfComprador) {
       return NextResponse.json({
@@ -97,8 +110,11 @@ export async function POST(request) {
 
     if (conflitos?.length > 0) {
       const cpfsConflito = conflitos.map((c) => c.dono_cpf);
+      const compradorJaInscrito = cpfComprador && cpfsConflito.includes(cpfComprador);
       return NextResponse.json({
-        erro: `CPF já inscrito neste evento: ${cpfsConflito.join(", ")}`,
+        erro: compradorJaInscrito
+          ? "Você já tem ingresso para este evento."
+          : `CPF já inscrito neste evento: ${cpfsConflito.join(", ")}`,
       }, { status: 409 });
     }
   }

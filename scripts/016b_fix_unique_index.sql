@@ -1,20 +1,28 @@
 -- =============================================================
 -- Ingressa — 016b: corrige índice único de dono_cpf por evento
--- Rodar se o CREATE UNIQUE INDEX do script 016 falhou
--- (ex.: já havia linhas duplicadas dos testes pré-Item 3).
+-- IDEMPOTENTE: pode ser rodado sem erro mesmo que o script 016
+-- já tenha criado a tabela lead, a política e a RPC.
+-- Estratégia: DROP IF EXISTS + CREATE em tudo que não tem OR REPLACE.
 -- =============================================================
 
--- 1. Diagnóstico — ver quais CPFs estão duplicados no mesmo evento
+-- ── 1. Política da tabela lead ──────────────────────────────
+-- DROP + CREATE é o padrão idempotente para policies no PostgreSQL
+-- (não existe "CREATE POLICY IF NOT EXISTS").
+DROP POLICY IF EXISTS "lead_insert_authenticated" ON public.lead;
+CREATE POLICY "lead_insert_authenticated"
+  ON public.lead FOR INSERT TO authenticated
+  WITH CHECK (origem_comprador_id = auth.uid());
+
+-- ── 2. Diagnóstico: CPFs duplicados no mesmo evento ─────────
 SELECT evento_id, dono_cpf, count(*) AS qtd
 FROM public.ingresso
 WHERE dono_cpf IS NOT NULL
 GROUP BY evento_id, dono_cpf
 HAVING count(*) > 1;
 
--- 2. (Apenas se houver duplicatas acima) Marcar os extras duplicados
---    como cancelados, mantendo o primeiro de cada grupo.
---    Descomentar e executar SOMENTE se necessário após analisar os dados.
-/*
+-- ── 3. Cancela duplicatas de teste (mantém o mais antigo) ───
+-- Roda incondicionalmente; se não houver duplicatas, o UPDATE
+-- afeta 0 linhas e não causa erro.
 UPDATE public.ingresso
 SET status = 'cancelado'
 WHERE id IN (
@@ -26,18 +34,16 @@ WHERE id IN (
   ) ranked
   WHERE rn > 1
 );
-*/
 
--- 3. Recriar o índice único (seguro de rodar: IF NOT EXISTS não faz nada
---    se já existir; DROP + CREATE se precisar forçar)
+-- ── 4. Recria o índice único ─────────────────────────────────
 DROP INDEX IF EXISTS ingresso_evento_dono_cpf_unico;
 
 CREATE UNIQUE INDEX ingresso_evento_dono_cpf_unico
   ON public.ingresso (evento_id, dono_cpf)
   WHERE dono_cpf IS NOT NULL;
 
--- 4. Atualiza a RPC inscrever_lote_batch para verificar duplicatas
---    EXPLICITAMENTE antes de inserir (belt + suspenders além do índice único).
+-- ── 5. Atualiza a RPC inscrever_lote_batch ───────────────────
+-- CREATE OR REPLACE é idempotente por definição.
 CREATE OR REPLACE FUNCTION public.inscrever_lote_batch(
   p_lote_id       UUID,
   p_comprador_id  UUID,
@@ -56,7 +62,7 @@ DECLARE
 BEGIN
   n_donos := jsonb_array_length(p_donos);
 
-  -- Trava e confirma vagas
+  -- Trava o lote e confirma que há vagas suficientes
   SELECT evento_id INTO v_evento_id
   FROM lote
   WHERE id = p_lote_id
@@ -67,7 +73,7 @@ BEGIN
     RAISE EXCEPTION 'lote_esgotado';
   END IF;
 
-  -- Verifica duplicatas de CPF DENTRO do próprio lote
+  -- CPF duplicado DENTRO do próprio pedido
   IF (
     SELECT count(DISTINCT elem->>'dono_cpf')
     FROM jsonb_array_elements(p_donos) AS t(elem)
@@ -80,7 +86,7 @@ BEGIN
     RAISE EXCEPTION 'cpf_duplicado_no_lote';
   END IF;
 
-  -- Verifica CPFs já inscritos neste evento
+  -- CPF já inscrito neste evento (via index scan — proteção belt+suspenders)
   IF EXISTS (
     SELECT 1
     FROM ingresso i
@@ -93,7 +99,7 @@ BEGIN
     RAISE EXCEPTION 'cpf_ja_inscrito';
   END IF;
 
-  -- Insere um ingresso por dono
+  -- Insere um ingresso por dono (o índice único barra duplicatas concorrentes)
   FOR dono IN SELECT * FROM jsonb_array_elements(p_donos)
   LOOP
     INSERT INTO ingresso (
@@ -115,7 +121,7 @@ BEGIN
     v_ingresso_ids := v_ingresso_ids || v_id;
   END LOOP;
 
-  -- Incrementa contador de uma vez
+  -- Incrementa o contador de vagas vendidas de uma vez
   UPDATE lote
   SET quantidade_vendida = quantidade_vendida + n_donos
   WHERE id = p_lote_id;
