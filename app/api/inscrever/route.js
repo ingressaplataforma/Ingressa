@@ -38,6 +38,13 @@ export async function POST(request) {
 
   if (!comprador) return NextResponse.json({ erro: "Perfil de comprador não encontrado" }, { status: 403 });
 
+  // Comprador sem CPF não pode se inscrever — trava de servidor para fechar o furo do índice único
+  if (!comprador.cpf) {
+    return NextResponse.json({
+      erro: "Complete seu cadastro com CPF antes de se inscrever.",
+    }, { status: 403 });
+  }
+
   const { data: lote } = await supabase
     .from("lote")
     .select("id, nome, evento_id, evento:evento_id(id, titulo, status)")

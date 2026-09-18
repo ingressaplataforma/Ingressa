@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import FluxoInscricao from "./FluxoInscricao";
 import CheckoutPago from "./CheckoutPago";
@@ -36,6 +36,10 @@ export default async function InscricaoPage({ params }) {
       .maybeSingle();
     temComprador = !!comp;
     if (comp) {
+      // Comprador sem CPF → completar cadastro antes de prosseguir
+      if (!comp.cpf) {
+        redirect(`/completar-cadastro?from=/e/${slug}/inscrever/${lote_id}`);
+      }
       compradorDados = {
         nome: comp.nome || "",
         cpf: comp.cpf || "",
