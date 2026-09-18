@@ -60,3 +60,33 @@ input[type=range]::-moz-range-thumb {
 @media (max-width: 560px) {
   .plans { grid-template-columns: 1fr !important; }
 }
+
+/* ── Vitrine de eventos ─────────────────────────── */
+.vitrine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.vitrine-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .vitrine-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 36px -8px rgba(26, 16, 53, 0.18);
+  }
+}
+/* Filtros: toggle mobile oculto no desktop */
+.vitrine-filter-toggle { display: none !important; }
+
+@media (max-width: 860px) {
+  .vitrine-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px !important; }
+}
+@media (max-width: 580px) {
+  .vitrine-grid { grid-template-columns: 1fr !important; }
+  /* No mobile, filtros ficam em painel recolhível */
+  .vitrine-filter-toggle { display: flex !important; }
+  .vitrine-filters-panel { display: none !important; }
+  .vitrine-filters-panel.open { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+}
