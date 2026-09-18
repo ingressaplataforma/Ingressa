@@ -34,7 +34,7 @@ export default async function EventoDetalhePage({ params }) {
 
   const { data: ingressos } = await supabase
     .from("ingresso")
-    .select("id, status, criado_em, lote:lote_id(nome), comprador:comprador_id(nome)")
+    .select("id, status, criado_em, dono_nome, dono_email, lote:lote_id(nome), comprador:comprador_id(nome)")
     .eq("evento_id", id)
     .order("criado_em", { ascending: false });
 
@@ -161,7 +161,10 @@ export default async function EventoDetalhePage({ params }) {
                 <tbody>
                   {ingressos.map((ing, i) => (
                     <tr key={ing.id} style={{ borderBottom: i < ingressos.length - 1 ? `1px solid ${T.line}` : "none" }}>
-                      <td style={{ padding: "12px 20px", color: T.ink, fontWeight: 500 }}>{ing.comprador?.nome ?? "—"}</td>
+                      <td style={{ padding: "12px 20px", color: T.ink, fontWeight: 500 }}>
+                        <span style={{ display: "block" }}>{ing.dono_nome ?? ing.comprador?.nome ?? "—"}</span>
+                        {(ing.dono_email) && <span style={{ fontSize: 12, color: T.muted }}>{ing.dono_email}</span>}
+                      </td>
                       <td style={{ padding: "12px 20px", color: T.ink2 }}>{ing.lote?.nome ?? "—"}</td>
                       <td style={{ padding: "12px 20px" }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: ing.status === "valido" ? T.mint : T.muted, background: `${ing.status === "valido" ? T.mint : T.muted}18`, padding: "3px 8px", borderRadius: 99 }}>

@@ -306,6 +306,16 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
     setSincronizando(false);
   }, [eventoId, baixarDados]);
 
+  // Extrai o código (UUID) de um token assinado (base64url payload)
+  function codigoDoToken(token) {
+    try {
+      const corpo = token.split(".")[0];
+      const b64 = corpo.replace(/-/g, "+").replace(/_/g, "/");
+      const json = atob(b64 + "=".repeat((4 - b64.length % 4) % 4));
+      return JSON.parse(json).codigo ?? null;
+    } catch { return null; }
+  }
+
   // ── Processamento de um token (QR ou manual) ───────────────────────
   const processarCodigo = useCallback(async (tokenOuCodigo, isToken = true) => {
     if (carregando) return;
@@ -314,6 +324,8 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
     let r;
     if (online) {
       const campo = isToken ? { token: tokenOuCodigo } : { codigo: tokenOuCodigo };
+      // Código UUID para atualizar listaLocal após o resultado
+      const codigoLocal = isToken ? codigoDoToken(tokenOuCodigo) : tokenOuCodigo;
       try {
         const res = await fetch(`/api/eventos/${eventoId}/checkin`, {
           method: "POST",
@@ -324,9 +336,17 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
         if (json.resultado === "ok") {
           r = { tipo: "ok", nome: json.nome, email: json.email, lote: json.lote };
           setPresentes((p) => p + 1);
+          // Atualiza lista local para refletir check-in sem recarregar
+          if (codigoLocal) {
+            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado" } : i));
+          }
         } else if (json.resultado === "ja_usado") {
           const h = json.usado_em ? new Date(json.usado_em).toLocaleTimeString("pt-BR") : "—";
           r = { tipo: "ja_usado", nome: json.nome, email: json.email, lote: json.lote, usadoEm: h };
+          // Sincroniza listaLocal caso estivesse desatualizado
+          if (codigoLocal) {
+            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado" } : i));
+          }
         } else {
           r = { tipo: "invalido", motivo: json.motivo ?? "Ingresso inválido" };
         }

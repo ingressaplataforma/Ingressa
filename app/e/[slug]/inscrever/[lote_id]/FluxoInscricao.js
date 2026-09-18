@@ -101,11 +101,19 @@ export default function FluxoInscricao({
   }
 
   function validarExtras() {
+    const cpfNorm = (v) => (v ? v.replace(/\D/g, "") : "");
+    const cpfComprador = cpfNorm(compradorAtual?.cpf || "");
+    const cpfsVistos = new Set();
+
     const errs = extras.map((d) => {
       if (!d.nome.trim()) return "Nome obrigatório";
       if (!d.email.trim()) return "E-mail obrigatório";
       if (!d.cpf) return "CPF obrigatório";
       if (!validarCPF(d.cpf)) return "CPF inválido";
+      const normalizado = cpfNorm(d.cpf);
+      if (cpfComprador && normalizado === cpfComprador) return "CPF igual ao do seu ingresso — use outro CPF";
+      if (cpfsVistos.has(normalizado)) return "CPF já usado em outro ingresso deste pedido";
+      cpfsVistos.add(normalizado);
       return null;
     });
     setErrosExtras(errs);

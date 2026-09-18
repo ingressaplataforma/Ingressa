@@ -133,7 +133,10 @@ export async function POST(request) {
     if (rpcError.message?.includes("lote_esgotado")) {
       return NextResponse.json({ erro: "Lote esgotado" }, { status: 409 });
     }
-    if (rpcError.message?.includes("ingresso_evento_dono_cpf_unico")) {
+    if (rpcError.message?.includes("cpf_duplicado_no_lote")) {
+      return NextResponse.json({ erro: "Dois ingressos com o mesmo CPF no mesmo pedido." }, { status: 422 });
+    }
+    if (rpcError.message?.includes("cpf_ja_inscrito") || rpcError.message?.includes("ingresso_evento_dono_cpf_unico")) {
       return NextResponse.json({ erro: "CPF já inscrito neste evento." }, { status: 409 });
     }
     console.error("RPC inscrever_lote_batch:", rpcError);
