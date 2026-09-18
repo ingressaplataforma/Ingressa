@@ -207,14 +207,14 @@ export default async function EventosPage({ searchParams }) {
                     display: "flex",
                     flexDirection: "column",
                   }}>
-                    {/* Capa */}
-                    <div style={{ position: "relative", aspectRatio: "16/9", overflow: "hidden", background: ev.imagem_url ? "#000" : gradiente(ev.id), flexShrink: 0 }}>
-                      {ev.imagem_url ? (
+                    {/* Capa — height explícita (não aspect-ratio) para funcionar em flex column sem width implícito */}
+                    <div style={{ position: "relative", width: "100%", height: 200, overflow: "hidden", background: !!ev.imagem_url ? "#000" : gradiente(ev.id), flexShrink: 0 }}>
+                      {!!ev.imagem_url ? (
                         <img src={ev.imagem_url} alt={ev.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                       ) : (
-                        /* Sem capa: gradiente do sistema — título em overlay sutil para ter algo visual */
+                        /* Sem capa: gradiente do sistema — título em overlay para ter algo visual */
                         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", padding: "14px 16px" }}>
-                          <span style={{ fontFamily: fontDisplay, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)", lineHeight: 1.3 }}>
+                          <span style={{ fontFamily: fontDisplay, fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>
                             {ev.titulo}
                           </span>
                         </div>
