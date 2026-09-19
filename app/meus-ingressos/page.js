@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { createClient } from "@/lib/supabase/server";
-import CarteiraClient from "./CarteiraClient";
+import ContaClient from "./ContaClient";
 import LogoutButton from "@/app/painel/LogoutButton";
 import { T } from "@/lib/tokens";
 
@@ -14,20 +14,27 @@ export default async function MeusIngressosPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/entrar");
 
-  const [{ data: comprador }, { data: org }] = await Promise.all([
-    supabase.from("comprador").select("nome").eq("id", user.id).maybeSingle(),
+  const [{ data: comprador }, { data: org }, { data: ingressos }] = await Promise.all([
+    supabase.from("comprador").select("nome, cpf, telefone").eq("id", user.id).maybeSingle(),
     supabase.from("organizador").select("id").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("ingresso")
+      .select("id, codigo, token_assinado, status, criado_em, dono_nome, lote:lote_id(nome), evento:evento_id(titulo, data_inicio, local_nome, slug)")
+      .eq("comprador_id", user.id)
+      .order("criado_em", { ascending: false }),
   ]);
 
   if (!comprador) redirect("/entrar");
 
-  const temPerfilOrganizador = !!org;
+  // Detect login provider — user.identities[].provider ("email" | "google" | ...)
+  const isGoogleUser = user.identities?.some((i) => i.provider === "google") ?? false;
 
-  const { data: ingressos } = await supabase
-    .from("ingresso")
-    .select("id, codigo, token_assinado, status, criado_em, dono_nome, lote:lote_id(nome), evento:evento_id(titulo, data_inicio, local_nome, slug)")
-    .eq("comprador_id", user.id)
-    .order("criado_em", { ascending: false });
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const lista = ingressos ?? [];
+  const proximos = lista.filter((i) => i.evento?.data_inicio && new Date(i.evento.data_inicio) >= hoje);
+  const historico = lista.filter((i) => i.evento?.data_inicio && new Date(i.evento.data_inicio) < hoje);
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
@@ -37,7 +44,7 @@ export default async function MeusIngressosPage() {
             <img src="/ingressa_logo_header.png" alt="Ingressa" width={130} style={{ display: "block", height: "auto" }} />
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {temPerfilOrganizador && (
+            {!!org && (
               <Link href="/painel" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>
                 Painel de organizador
               </Link>
@@ -48,14 +55,23 @@ export default async function MeusIngressosPage() {
       </header>
 
       <main style={{ maxWidth: 1000, margin: "0 auto", padding: "clamp(36px,5vw,64px) clamp(20px,5vw,48px)" }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 10 }}>Minha carteira</p>
+        <p style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 10 }}>Minha conta</p>
         <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(26px,4vw,38px)", fontWeight: 600, letterSpacing: "-0.03em", color: T.ink, margin: "0 0 32px" }}>
           Olá, {comprador.nome}!
         </h1>
 
-        <CarteiraClient ingressos={ingressos ?? []} />
+        <ContaClient
+          proximos={proximos}
+          historico={historico}
+          comprador={{
+            nome: comprador.nome ?? "",
+            cpf: comprador.cpf ?? "",
+            telefone: comprador.telefone ?? "",
+            email: user.email ?? "",
+          }}
+          isGoogleUser={isGoogleUser}
+        />
       </main>
     </div>
   );
 }
-
