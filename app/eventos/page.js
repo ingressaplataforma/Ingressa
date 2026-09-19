@@ -79,9 +79,6 @@ export default async function EventosPage({ searchParams }) {
   const { data: eventos } = await query;
 
   const temFiltro = !!(q || cat || uf || periodo);
-  const destaque = eventos?.[0] ?? null;
-  const restantes = eventos?.slice(1) ?? [];
-  const destaquePreco = destaque ? precoInfo(destaque.lote) : null;
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
@@ -112,7 +109,7 @@ export default async function EventosPage({ searchParams }) {
         </div>
 
         {/* Estado vazio */}
-        {!destaque && (
+        {!eventos?.length && (
           <div style={{ textAlign: "center", padding: "80px 20px" }}>
             <div style={{ width: 60, height: 60, borderRadius: "50%", background: T.panel, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 26 }}>
               {temFiltro ? "🔍" : "📅"}
@@ -128,73 +125,16 @@ export default async function EventosPage({ searchParams }) {
           </div>
         )}
 
-        {/* Evento em destaque — primeiro resultado, capa dominante */}
-        {/* TODO (eventos patrocinados futura): aqui poderá entrar um destaque pago/curado acima do primeiro orgânico */}
-        {destaque && (
-          <Link href={`/e/${destaque.slug}`} style={{ textDecoration: "none", display: "block", marginBottom: 28 }}>
-            <div
-              className="vitrine-card"
-              style={{
-                borderRadius: 20,
-                overflow: "hidden",
-                position: "relative",
-                height: "clamp(260px, 36vw, 420px)",
-                background: destaque.imagem_url ? "#000" : gradiente(destaque.id),
-              }}
-            >
-              {/* Capa */}
-              {destaque.imagem_url && (
-                <img
-                  src={destaque.imagem_url}
-                  alt={destaque.titulo}
-                  style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.85 }}
-                />
-              )}
-              {/* Overlay de legibilidade — escuro de baixo para cima */}
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(26,16,53,0.97) 0%, rgba(26,16,53,0.55) 50%, rgba(26,16,53,0.12) 100%)" }} />
+        {/*
+          TODO (futuro — item 6): quando houver muitos eventos ou eventos patrocinados/curados,
+          reintroduzir um card em destaque full-width acima do grid para o primeiro resultado
+          orgânico ou para uma inserção paga. Por ora, grid uniforme para todos.
+        */}
 
-              {/* Conteúdo sobre a imagem */}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "clamp(20px,3.5vw,36px)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
-                  {destaque.categoria && destaque.categoria !== "outro" && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.16)", padding: "3px 10px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.06em", backdropFilter: "blur(6px)" }}>
-                      {CATEGORIA_LABEL[destaque.categoria] ?? destaque.categoria}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
-                    {fmtData(destaque.data_inicio)}{destaque.uf ? ` · ${destaque.uf}` : ""}
-                  </span>
-                </div>
-
-                <h2 style={{ fontFamily: fontDisplay, fontSize: "clamp(22px,3.5vw,36px)", fontWeight: 600, color: "#fff", margin: "0 0 8px", letterSpacing: "-0.02em", lineHeight: 1.2, maxWidth: 680 }}>
-                  {destaque.titulo}
-                </h2>
-
-                {destaque.local_nome && (
-                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: "0 0 18px" }}>
-                    📍 {destaque.local_nome}
-                  </p>
-                )}
-
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-                  {destaquePreco && (
-                    <span style={{ fontSize: 16, fontWeight: 700, color: destaquePreco.cor === T.mint ? "#00E6AE" : "#fff" }}>
-                      {destaquePreco.texto}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#fff", padding: "9px 22px", borderRadius: 11, background: T.coral, display: "inline-block" }}>
-                    Ver evento
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Link>
-        )}
-
-        {/* Grid dos demais eventos */}
-        {restantes.length > 0 && (
+        {/* Grid uniforme — todos os eventos no mesmo tamanho compacto */}
+        {!!eventos?.length && (
           <div className="vitrine-grid">
-            {restantes.map((ev) => {
+            {eventos.map((ev) => {
               const preco = precoInfo(ev.lote);
               return (
                 <Link key={ev.id} href={`/e/${ev.slug}`} style={{ textDecoration: "none" }}>
@@ -252,6 +192,7 @@ export default async function EventosPage({ searchParams }) {
             })}
           </div>
         )}
+
       </main>
     </div>
   );
