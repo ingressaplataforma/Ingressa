@@ -4,10 +4,22 @@ import crypto from "crypto";
 import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { CATEGORIA_LABEL } from "@/lib/categorias";
 import { T, BRL } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
+
+// Gradientes determinísticos — mesmo sistema da vitrine
+const GRADIENTES = [
+  "linear-gradient(145deg, #1A1035 0%, #3B2E63 100%)",
+  "linear-gradient(145deg, #231647 0%, #1A1035 55%, #00C89618 100%)",
+  "linear-gradient(145deg, #2A1A5E 0%, #3B1F3F 100%)",
+  "linear-gradient(145deg, #1A1035 0%, #3B2E63 70%, #FF5A5F14 100%)",
+];
+function gradiente(id) {
+  return GRADIENTES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % GRADIENTES.length];
+}
 
 function computeAccessToken(slug, senhaHash) {
   const secret = process.env.INGRESSO_TOKEN_SECRET || "fallback-dev";
@@ -25,7 +37,13 @@ export default async function EventoPublicoPage({ params }) {
 
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, endereco, data_inicio, data_fim, status, slug, visibilidade, senha_hash, imagem_url, organizador:organizador_id(gateway_recipient_id), lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select(`
+      id, titulo, descricao, local_nome, endereco, uf, categoria,
+      data_inicio, data_fim, status, slug, visibilidade, senha_hash,
+      imagem_url, destaque, destaque_admin, destaque_bloqueado_admin,
+      organizador:organizador_id(gateway_recipient_id, nome),
+      lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)
+    `)
     .eq("slug", slug)
     .in("status", ["publicado", "pausado"])
     .maybeSingle();
@@ -55,131 +73,238 @@ export default async function EventoPublicoPage({ params }) {
   }
 
   const imageUrl = imagemPublicUrl(evento.imagem_url);
+  const temImagem = !!imageUrl;
+  const eDestaque = (evento.destaque || evento.destaque_admin) && !evento.destaque_bloqueado_admin;
+
   const dataInicio = new Date(evento.data_inicio);
   const dataFim = evento.data_fim ? new Date(evento.data_fim) : null;
   const dataFormatada = dataInicio.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const horaFormatada = dataInicio.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-  return (
-    <div style={{ minHeight: "100vh", background: imageUrl ? "transparent" : T.surface, fontFamily: fontBody, position: "relative" }}>
+  const recebedorConfigurado = !!evento.organizador?.gateway_recipient_id;
+  const totalVagas = (evento.lote ?? []).reduce((s, l) => s + l.quantidade_total, 0);
+  const totalVendidas = (evento.lote ?? []).reduce((s, l) => s + l.quantidade_vendida, 0);
+  const esgotadoTotal = totalVagas > 0 && totalVendidas >= totalVagas;
 
-      {/* ── Fundo borrado (apenas quando há imagem) ── */}
-      {imageUrl && (
-        <>
-          <div
-            aria-hidden="true"
-            style={{
-              position: "fixed", inset: 0, zIndex: 0,
-              backgroundImage: `url(${imageUrl})`,
-              backgroundSize: "cover", backgroundPosition: "center",
-              filter: "blur(48px) brightness(0.22)",
-              transform: "scale(1.08)",
-            }}
-          />
-          {/* Overlay escuro extra para garantir contraste */}
-          <div aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 0, background: "rgba(10,6,26,0.5)" }} />
-        </>
-      )}
+  // ── Layout: com imagem usa fundo borrado; sem imagem usa hero com gradiente ──
 
-      {/* ── Conteúdo (acima do fundo borrado) ── */}
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <nav style={{ borderBottom: `1px solid ${imageUrl ? "rgba(255,255,255,0.12)" : T.line}`, background: imageUrl ? "rgba(26,16,53,0.75)" : "#fff", backdropFilter: imageUrl ? "blur(12px)" : "none", padding: "0 clamp(20px,5vw,48px)" }}>
+  if (!temImagem) {
+    // ── Versão sem capa: hero com gradiente elegante ────────────────────────
+    return (
+      <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
+
+        {/* Nav simples */}
+        <nav style={{ borderBottom: `1px solid ${T.line}`, background: "#fff", padding: "0 clamp(20px,5vw,48px)" }}>
           <div style={{ maxWidth: 860, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
-              <LogoIcon color={imageUrl ? "#fff" : T.ink} />
-              <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18, color: imageUrl ? "#fff" : T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
+              <LogoIcon />
+              <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18, color: T.ink, letterSpacing: "-0.02em" }}>Ingressa</span>
             </Link>
             <Link href="/entrar" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>Entrar</Link>
           </div>
         </nav>
 
-        {/* ── Capa (banner nítido 3:1) ── */}
-        {imageUrl ? (
-          <div style={{ width: "100%", position: "relative", aspectRatio: "3/1", maxHeight: 360, overflow: "hidden" }}>
-            <Image
-              src={imageUrl}
-              alt={`Capa de ${evento.titulo}`}
-              fill
-              style={{ objectFit: "cover" }}
-              priority
-              sizes="100vw"
-            />
-            {/* Gradiente inferior para transição suave ao conteúdo */}
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(to bottom, transparent, rgba(10,6,26,0.6))" }} />
-          </div>
-        ) : (
-          /* Placeholder gradiente quando sem imagem */
-          <div style={{ width: "100%", height: 8, background: `linear-gradient(90deg, ${T.ink} 0%, ${T.ink2} 50%, #2D1B69 100%)` }} />
-        )}
-
-        {/* ── Conteúdo principal ── */}
-        <main style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(32px,5vw,56px) clamp(20px,5vw,48px)" }}>
-
-          {/* Card do cabeçalho do evento */}
-          <div style={{ background: imageUrl ? "rgba(255,255,255,0.97)" : "#fff", borderRadius: 20, padding: imageUrl ? "28px 32px" : 0, marginBottom: 28, boxShadow: imageUrl ? "0 8px 40px rgba(0,0,0,0.25)" : "none" }}>
-            <p style={{ fontSize: 13, fontWeight: 600, color: T.coral, marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Evento</p>
-            <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(28px,5vw,44px)", fontWeight: 600, color: T.ink, margin: "0 0 20px", lineHeight: 1.1, letterSpacing: "-0.03em" }}>
+        {/* Hero com gradiente */}
+        <div style={{ background: gradiente(evento.id), padding: "clamp(48px,8vw,80px) clamp(20px,5vw,48px)" }}>
+          <div style={{ maxWidth: 860, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+              {eDestaque && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.coral, background: "rgba(255,90,95,0.18)", padding: "3px 10px", borderRadius: 99, letterSpacing: "0.05em" }}>
+                  ✦ DESTAQUE
+                </span>
+              )}
+              {evento.categoria && evento.categoria !== "outro" && (
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", background: "rgba(255,255,255,0.12)", padding: "3px 10px", borderRadius: 99, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  {CATEGORIA_LABEL?.[evento.categoria] ?? evento.categoria}
+                </span>
+              )}
+            </div>
+            <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(30px,5vw,52px)", fontWeight: 600, color: "#fff", margin: "0 0 20px", lineHeight: 1.1, letterSpacing: "-0.03em" }}>
               {evento.titulo}
             </h1>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 20, color: T.ink2, fontSize: 15 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 18, fontSize: 15, color: "rgba(255,255,255,0.8)" }}>
               <InfoItem icon="📅" text={`${dataFormatada} às ${horaFormatada}`} />
               {dataFim && <InfoItem icon="🔚" text={`Até ${dataFim.toLocaleDateString("pt-BR")}`} />}
-              {evento.local_nome && <InfoItem icon="📍" text={evento.local_nome} />}
+              {evento.local_nome && <InfoItem icon="📍" text={evento.local_nome + (evento.uf ? `, ${evento.uf}` : "")} />}
               {evento.endereco && <InfoItem icon="🗺️" text={evento.endereco} />}
             </div>
           </div>
+        </div>
 
-          {evento.descricao && (
-            <div style={{ background: imageUrl ? "rgba(255,255,255,0.97)" : "#fff", borderRadius: 16, border: imageUrl ? "none" : `1px solid ${T.line}`, padding: "24px 28px", marginBottom: 28, boxShadow: imageUrl ? "0 4px 20px rgba(0,0,0,0.15)" : "none" }}>
-              <h2 style={{ fontFamily: fontDisplay, fontSize: 18, fontWeight: 600, color: T.ink, margin: "0 0 12px" }}>Sobre o evento</h2>
-              <p style={{ fontSize: 15, color: T.ink2, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{evento.descricao}</p>
-            </div>
-          )}
+        {/* Conteúdo */}
+        <main style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(32px,5vw,56px) clamp(20px,5vw,48px)" }}>
+          <EventoConteudo evento={evento} fontDisplay={fontDisplay} fontBody={fontBody} recebedorConfigurado={recebedorConfigurado} esgotadoTotal={esgotadoTotal} totalVagas={totalVagas} totalVendidas={totalVendidas} slug={slug} temImagem={false} />
+        </main>
+      </div>
+    );
+  }
 
-          <div style={{ background: imageUrl ? "rgba(255,255,255,0.97)" : "transparent", borderRadius: 16, padding: imageUrl ? "24px 28px" : 0, boxShadow: imageUrl ? "0 4px 20px rgba(0,0,0,0.15)" : "none" }}>
-            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 16px" }}>Ingressos</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {evento.lote.map((lote) => {
-                const esgotado = lote.quantidade_vendida >= lote.quantidade_total;
-                const restantes = lote.quantidade_total - lote.quantidade_vendida;
-                const pago = lote.preco_cents > 0;
-                const recebedorConfigurado = !!evento.organizador?.gateway_recipient_id;
-                return (
-                  <div key={lote.id} style={{ background: "#fff", borderRadius: 14, border: `1px solid ${T.line}`, padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-                    <div>
-                      <p style={{ fontSize: 16, fontWeight: 600, color: T.ink, margin: "0 0 4px" }}>{lote.nome}</p>
-                      <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
-                        {lote.preco_cents === 0 ? "Gratuito" : BRL(lote.preco_cents / 100)}
-                        {!esgotado && restantes <= 20 && (
-                          <span style={{ color: "#E67E22", fontWeight: 600 }}> · Últimas {restantes} vagas</span>
-                        )}
-                        {esgotado && <span style={{ color: T.muted }}> · Esgotado</span>}
-                      </p>
-                    </div>
-                    {esgotado ? (
-                      <button disabled style={{ padding: "11px 24px", background: T.line, color: T.muted, border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "not-allowed", fontFamily: fontBody }}>Esgotado</button>
-                    ) : pago && !recebedorConfigurado ? (
-                      <span style={{ padding: "11px 24px", background: T.panel, color: T.muted, borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: fontBody }}>Em breve</span>
-                    ) : (
-                      <Link href={`/e/${slug}/inscrever/${lote.id}`} style={{ padding: "11px 24px", background: T.coral, color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: "none", display: "inline-block", fontFamily: fontBody }}>
-                        {pago ? "Comprar" : "Inscrever-se"}
-                      </Link>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+  // ── Versão com capa: fundo borrado + banner ──────────────────────────────────
+  return (
+    <div style={{ minHeight: "100vh", fontFamily: fontBody, position: "relative" }}>
+
+      {/* Fundo borrado */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed", inset: 0, zIndex: 0,
+          backgroundImage: `url(${imageUrl})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+          filter: "blur(48px) brightness(0.22)",
+          transform: "scale(1.08)",
+        }}
+      />
+      <div aria-hidden="true" style={{ position: "fixed", inset: 0, zIndex: 0, background: "rgba(10,6,26,0.5)" }} />
+
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {/* Nav glassmorphism */}
+        <nav style={{ borderBottom: "1px solid rgba(255,255,255,0.12)", background: "rgba(26,16,53,0.75)", backdropFilter: "blur(12px)", padding: "0 clamp(20px,5vw,48px)" }}>
+          <div style={{ maxWidth: 860, margin: "0 auto", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+              <LogoIcon color="#fff" />
+              <span style={{ fontFamily: fontDisplay, fontWeight: 600, fontSize: 18, color: "#fff", letterSpacing: "-0.02em" }}>Ingressa</span>
+            </Link>
+            <Link href="/entrar" style={{ fontSize: 14, fontWeight: 600, color: T.coral, textDecoration: "none" }}>Entrar</Link>
           </div>
+        </nav>
+
+        {/* Banner hero — imagem nítida */}
+        <div style={{ width: "100%", position: "relative", aspectRatio: "16/5", maxHeight: 380, overflow: "hidden" }}>
+          <Image src={imageUrl} alt={`Capa de ${evento.titulo}`} fill style={{ objectFit: "cover" }} priority sizes="100vw" />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(10,6,26,0.7) 100%)" }} />
+          {/* Badges sobre a capa */}
+          <div style={{ position: "absolute", bottom: 20, left: "clamp(20px,5vw,48px)", display: "flex", gap: 8 }}>
+            {eDestaque && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: T.coral, padding: "3px 10px", borderRadius: 99, letterSpacing: "0.05em" }}>
+                ✦ DESTAQUE
+              </span>
+            )}
+            {evento.categoria && evento.categoria !== "outro" && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.18)", padding: "3px 10px", borderRadius: 99, letterSpacing: "0.05em", textTransform: "uppercase", backdropFilter: "blur(6px)" }}>
+                {CATEGORIA_LABEL?.[evento.categoria] ?? evento.categoria}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Conteúdo */}
+        <main style={{ maxWidth: 860, margin: "0 auto", padding: "clamp(32px,5vw,56px) clamp(20px,5vw,48px)" }}>
+          <EventoConteudo evento={evento} fontDisplay={fontDisplay} fontBody={fontBody} recebedorConfigurado={recebedorConfigurado} esgotadoTotal={esgotadoTotal} totalVagas={totalVagas} totalVendidas={totalVendidas} slug={slug} temImagem imageUrl={imageUrl} dataFormatada={dataFormatada} horaFormatada={horaFormatada} dataFim={dataFim} />
         </main>
       </div>
     </div>
   );
 }
 
+// ── Conteúdo compartilhado (cabeçalho, descrição, ingressos) ─────────────────
+
+function EventoConteudo({ evento, fontDisplay, fontBody, recebedorConfigurado, esgotadoTotal, totalVagas, totalVendidas, slug, temImagem, imageUrl, dataFormatada, horaFormatada, dataFim }) {
+  const cardStyle = temImagem
+    ? { background: "rgba(255,255,255,0.97)", borderRadius: 20, padding: "28px 32px", marginBottom: 20, boxShadow: "0 8px 40px rgba(0,0,0,0.25)" }
+    : { background: "#fff", borderRadius: 16, border: `1px solid ${T.line}`, padding: "24px 28px", marginBottom: 20 };
+
+  return (
+    <>
+      {/* Cabeçalho do evento — só no layout com imagem (no sem-imagem já está no hero) */}
+      {temImagem && (
+        <div style={cardStyle}>
+          <h1 style={{ fontFamily: fontDisplay, fontSize: "clamp(26px,4vw,40px)", fontWeight: 600, color: T.ink, margin: "0 0 18px", lineHeight: 1.1, letterSpacing: "-0.03em" }}>
+            {evento.titulo}
+          </h1>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 18, color: T.ink2, fontSize: 15 }}>
+            <InfoItem icon="📅" text={`${dataFormatada} às ${horaFormatada}`} />
+            {dataFim && <InfoItem icon="🔚" text={`Até ${dataFim.toLocaleDateString("pt-BR")}`} />}
+            {evento.local_nome && <InfoItem icon="📍" text={evento.local_nome + (evento.uf ? `, ${evento.uf}` : "")} />}
+            {evento.endereco && <InfoItem icon="🗺️" text={evento.endereco} />}
+          </div>
+        </div>
+      )}
+
+      {/* Ocupação (quando há vagas) */}
+      {totalVagas > 0 && (
+        <div style={{ ...cardStyle, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontSize: 13, color: T.muted, margin: "0 0 6px", fontWeight: 600 }}>Vagas preenchidas</p>
+            <div style={{ height: 6, borderRadius: 99, background: T.line, overflow: "hidden" }}>
+              <div style={{ height: "100%", borderRadius: 99, background: esgotadoTotal ? "#E67E22" : T.mint, width: `${Math.min(100, (totalVendidas / totalVagas) * 100)}%`, transition: "width 0.4s" }} />
+            </div>
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 700, color: esgotadoTotal ? "#E67E22" : T.mint, margin: 0, whiteSpace: "nowrap" }}>
+            {esgotadoTotal ? "Esgotado" : `${totalVagas - totalVendidas} restantes`}
+          </p>
+        </div>
+      )}
+
+      {/* Descrição */}
+      {evento.descricao && (
+        <div style={cardStyle}>
+          <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 12px" }}>Sobre o evento</h2>
+          <p style={{ fontSize: 15, color: T.ink2, lineHeight: 1.75, margin: 0, whiteSpace: "pre-wrap" }}>{evento.descricao}</p>
+        </div>
+      )}
+
+      {/* Ingressos / Lotes */}
+      <div style={cardStyle}>
+        <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 16px" }}>
+          {evento.lote?.some((l) => l.preco_cents > 0) ? "Ingressos" : "Inscrições"}
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {(evento.lote ?? []).map((lote) => {
+            const esgotado = lote.quantidade_vendida >= lote.quantidade_total;
+            const restantes = lote.quantidade_total - lote.quantidade_vendida;
+            const pago = lote.preco_cents > 0;
+            return (
+              <div key={lote.id} style={{
+                background: "#fff",
+                borderRadius: 14,
+                border: `1px solid ${esgotado ? T.line : T.mint + "40"}`,
+                padding: "18px 22px",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+              }}>
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 700, color: T.ink, margin: "0 0 4px" }}>{lote.nome}</p>
+                  <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+                    {lote.preco_cents === 0 ? "Gratuito" : BRL(lote.preco_cents / 100)}
+                    {!esgotado && restantes <= 20 && (
+                      <span style={{ color: "#E67E22", fontWeight: 600 }}> · Últimas {restantes} vagas</span>
+                    )}
+                    {esgotado && <span style={{ color: T.muted, fontWeight: 500 }}> · Esgotado</span>}
+                  </p>
+                </div>
+                {esgotado ? (
+                  <span style={{ padding: "11px 22px", background: T.line, color: T.muted, borderRadius: 10, fontSize: 14, fontWeight: 600 }}>Esgotado</span>
+                ) : pago && !recebedorConfigurado ? (
+                  <span style={{ padding: "11px 22px", background: T.panel, color: T.muted, borderRadius: 10, fontSize: 14, fontWeight: 600 }}>Em breve</span>
+                ) : (
+                  <Link
+                    href={`/e/${slug}/inscrever/${lote.id}`}
+                    style={{ padding: "11px 24px", background: T.coral, color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: "none", display: "inline-block", fontFamily: fontBody, letterSpacing: "0.01em" }}
+                  >
+                    {pago ? "Comprar" : "Inscrever-se"}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Rodapé — link de volta */}
+      <div style={{ marginTop: 12, textAlign: "center" }}>
+        <Link href="/eventos" style={{ fontSize: 14, color: T.muted, textDecoration: "none" }}>
+          ← Ver todos os eventos
+        </Link>
+      </div>
+    </>
+  );
+}
+
+// ── Componentes auxiliares ────────────────────────────────────────────────────
+
 function InfoItem({ icon, text }) {
   return (
-    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-      <span>{icon}</span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <span aria-hidden="true">{icon}</span>
       <span>{text}</span>
     </span>
   );
