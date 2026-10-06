@@ -18,7 +18,7 @@ export async function POST(request) {
   const { data: org } = await supabase.from("organizador").select("id").eq("id", user.id).maybeSingle();
   if (!org) return NextResponse.json({ erro: "Não é organizador" }, { status: 403 });
 
-  // Limite de 3 eventos gratuitos
+  // Limite de 1 evento gratuito
   const temPlano = await organizadorTemPlanoAtivo(user.id);
   if (!temPlano) {
     const { count: totalEventos } = await supabase
@@ -26,10 +26,10 @@ export async function POST(request) {
       .select("id", { count: "exact", head: true })
       .eq("organizador_id", user.id);
 
-    if ((totalEventos ?? 0) >= 3) {
+    if ((totalEventos ?? 0) >= 1) {
       return NextResponse.json(
         {
-          erro: "Você atingiu o limite de 3 eventos gratuitos. Assine o plano para criar eventos ilimitados.",
+          erro: "Você já usou seu evento gratuito. Assine um plano para criar mais eventos.",
           limite: true,
         },
         { status: 403 }

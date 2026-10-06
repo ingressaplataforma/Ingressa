@@ -763,7 +763,7 @@ function PlansStrip() {
       <SectionHead
         kicker="Preços"
         title="Comece grátis. Evolua quando crescer."
-        sub="Comece com 3 eventos gratuitos — sem cartão, sem aprovação. Quando seu calendário crescer, escolha o plano que cabe no seu ritmo. Sem letra miúda."
+        sub="Comece com 1 evento gratuito — sem cartão, sem aprovação. Quando seu calendário crescer, escolha o plano que cabe no seu ritmo. Sem letra miúda."
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 40 }} className="plans">
         {PLANOS.map((p) => (

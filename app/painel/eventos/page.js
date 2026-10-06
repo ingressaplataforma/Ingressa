@@ -16,7 +16,7 @@ const STATUS_LABEL = {
   cancelado: { label: "Cancelado", color: "#E74C3C" },
 };
 
-const LIMITE_GRATIS = 3;
+const LIMITE_GRATIS = 1;
 
 export default async function EventosPage() {
   const supabase = await createClient();
@@ -63,7 +63,7 @@ export default async function EventosPage() {
             <div>
               <p style={{ fontSize: 14, fontWeight: 600, color: "#7A4500", margin: "0 0 2px" }}>Limite de eventos gratuitos atingido</p>
               <p style={{ fontSize: 13, color: "#996633", margin: 0 }}>
-                Você usou seus {LIMITE_GRATIS} eventos gratuitos. Planos com mais eventos chegam em breve — aguarde novidades!
+                Você já usou seu evento gratuito. Assine um plano para criar mais eventos.
               </p>
             </div>
           </div>
