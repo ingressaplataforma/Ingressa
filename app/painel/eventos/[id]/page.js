@@ -26,7 +26,7 @@ export default async function EventoDetalhePage({ params }) {
 
   const { data: evento } = await supabase
     .from("evento")
-    .select("id, titulo, descricao, local_nome, cep, endereco, uf, categoria, data_inicio, data_fim, status, slug, visibilidade, senha_hash, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, destaque, destaque_admin, destaque_bloqueado_admin, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
+    .select("id, titulo, descricao, local_nome, cep, endereco, uf, categoria, data_inicio, data_fim, status, slug, visibilidade, senha_hash, imagem_url, aceita_cartao, aceita_boleto, quem_paga_taxa, destaque, destaque_admin, lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)")
     .eq("id", id)
     .eq("organizador_id", user.id)
     .maybeSingle();
@@ -105,7 +105,7 @@ export default async function EventoDetalhePage({ params }) {
           <DestaqueToggle
             eventoId={evento.id}
             destaqueInicial={!!evento.destaque}
-            adminDestaque={!!evento.destaque_admin || !!evento.destaque_bloqueado_admin}
+            adminDestaque={evento.destaque_admin}
           />
         )}
 

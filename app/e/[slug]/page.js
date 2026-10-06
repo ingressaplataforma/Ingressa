@@ -40,7 +40,7 @@ export default async function EventoPublicoPage({ params }) {
     .select(`
       id, titulo, descricao, local_nome, endereco, uf, categoria,
       data_inicio, data_fim, status, slug, visibilidade, senha_hash,
-      imagem_url, destaque, destaque_admin, destaque_bloqueado_admin,
+      imagem_url, destaque, destaque_admin,
       organizador:organizador_id(gateway_recipient_id, nome),
       lote(id, nome, preco_cents, quantidade_total, quantidade_vendida)
     `)
@@ -74,7 +74,7 @@ export default async function EventoPublicoPage({ params }) {
 
   const imageUrl = imagemPublicUrl(evento.imagem_url);
   const temImagem = !!imageUrl;
-  const eDestaque = (evento.destaque || evento.destaque_admin) && !evento.destaque_bloqueado_admin;
+  const eDestaque = evento.destaque_admin === true || (evento.destaque_admin === null && evento.destaque === true);
 
   const dataInicio = new Date(evento.data_inicio);
   const dataFim = evento.data_fim ? new Date(evento.data_fim) : null;

@@ -9,10 +9,16 @@ const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 // preço, abrir fluxo de checkout e só ativar após confirmação de pagamento.
 // A validação financeira entra em /api/eventos/[id]/destaque antes de gravar.
 
+// adminDestaque: null = admin não interferiu (org controla)
+//                true = admin forçou ligado (org não pode desligar)
+//               false = admin forçou desligado (org não pode ligar)
 export default function DestaqueToggle({ eventoId, destaqueInicial, adminDestaque }) {
   const [destaque, setDestaque] = useState(destaqueInicial);
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const adminOverride = adminDestaque !== null && adminDestaque !== undefined;
+  const ativo = adminDestaque === true || (adminDestaque === null && destaque);
 
   async function toggle() {
     setSalvando(true);
@@ -33,7 +39,12 @@ export default function DestaqueToggle({ eventoId, destaqueInicial, adminDestaqu
     setSalvando(false);
   }
 
-  const ativo = destaque || adminDestaque;
+  let avisoAdmin = null;
+  if (adminDestaque === true) {
+    avisoAdmin = "Destaque ativado pelo administrador — você não pode desligar.";
+  } else if (adminDestaque === false) {
+    avisoAdmin = "Destaque bloqueado pelo administrador.";
+  }
 
   return (
     <div style={{ background: "#fff", borderRadius: 14, border: `1.5px solid ${ativo ? T.mint : T.line}`, padding: "18px 20px", marginBottom: 28 }}>
@@ -44,27 +55,28 @@ export default function DestaqueToggle({ eventoId, destaqueInicial, adminDestaqu
             Destacar este evento
           </p>
           <p style={{ fontSize: 13, color: T.muted, margin: 0, lineHeight: 1.5 }}>
-            Eventos em destaque aparecem num popup ao entrar no site e recebem posição privilegiada.
-            {adminDestaque && (
-              <span style={{ display: "block", marginTop: 4, color: T.mint, fontWeight: 600 }}>
-                Destaque ativado pelo administrador.
+            Seu evento aparece em destaque na home e recebe posição privilegiada.
+            Em breve este será um recurso premium.
+            {avisoAdmin && (
+              <span style={{ display: "block", marginTop: 4, color: adminDestaque ? T.mint : "#e53e3e", fontWeight: 600 }}>
+                {avisoAdmin}
               </span>
             )}
           </p>
         </div>
         <button
           onClick={toggle}
-          disabled={salvando || adminDestaque}
-          title={adminDestaque ? "Destaque gerenciado pelo administrador" : undefined}
+          disabled={salvando || adminOverride}
+          title={avisoAdmin ?? undefined}
           style={{
             padding: "10px 20px", borderRadius: 10,
             background: destaque ? T.mint : T.surface,
             border: `2px solid ${destaque ? T.mint : T.line}`,
             color: destaque ? "#fff" : T.ink,
             fontWeight: 700, fontSize: 14,
-            cursor: (salvando || adminDestaque) ? "not-allowed" : "pointer",
+            cursor: (salvando || adminOverride) ? "not-allowed" : "pointer",
             fontFamily: fontBody, transition: "all 0.15s",
-            opacity: (salvando || adminDestaque) ? 0.65 : 1,
+            opacity: (salvando || adminOverride) ? 0.65 : 1,
             whiteSpace: "nowrap",
           }}
         >
