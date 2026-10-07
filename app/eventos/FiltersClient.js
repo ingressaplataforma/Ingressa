@@ -132,10 +132,11 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
           onChange={(e) => update("periodo", e.target.value)}
           style={{ ...fieldStyle, flex: "0 0 auto", minWidth: 160, cursor: "pointer" }}
         >
-          <option value="">Qualquer data</option>
+          <option value="">Próximos eventos</option>
           <option value="7d">Próximos 7 dias</option>
           <option value="mes">Este mês</option>
           <option value="prox_mes">Próximo mês</option>
+          <option value="passados">Incluir passados</option>
         </select>
 
         {/* Limpar filtros */}

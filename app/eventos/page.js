@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CATEGORIA_LABEL } from "@/lib/categorias";
 import { T, BRL } from "@/lib/tokens";
 import FiltersClient from "./FiltersClient";
+import DestaquePopup from "../components/DestaquePopup";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
@@ -60,6 +61,34 @@ export default async function EventosPage({ searchParams }) {
 
   const supabase = await createClient();
 
+  // ── Evento em destaque para o popup ─────────────────────────────────────────
+  // Aparece ao entrar em /eventos. Só mostra evento FUTURO.
+  // FUTURO (recurso PAGO): filtrar também por destaque_pago=true antes de exibir.
+  const agora = new Date().toISOString();
+  const { data: candidatos, error: destaqueError } = await supabase
+    .from("evento")
+    .select("id, titulo, slug, local_nome, data_inicio, imagem_url, destaque, destaque_admin, destaque_ordem")
+    .eq("status", "publicado")
+    .eq("visibilidade", "publico")
+    .or("destaque.is.true,destaque_admin.is.true")
+    .gte("data_inicio", agora)
+    .order("destaque_ordem", { ascending: true, nullsFirst: false })
+    .order("data_inicio", { ascending: true });
+
+  if (destaqueError) console.error("[eventos] erro ao buscar destaque:", destaqueError);
+
+  // Regra efetiva: descarta destaque_admin=false; prioriza destaque_admin=true
+  const destaqueEvento = (candidatos ?? [])
+    .filter((ev) => ev.destaque_admin === true || (ev.destaque_admin === null && ev.destaque === true))
+    .sort((a, b) => {
+      if (a.destaque_admin === true && b.destaque_admin !== true) return -1;
+      if (b.destaque_admin === true && a.destaque_admin !== true) return 1;
+      const oa = a.destaque_ordem ?? Infinity;
+      const ob = b.destaque_ordem ?? Infinity;
+      return oa - ob;
+    })[0] ?? null;
+
+  // ── Listagem de eventos ──────────────────────────────────────────────────────
   let query = supabase
     .from("evento")
     .select("id, titulo, descricao, local_nome, uf, categoria, data_inicio, slug, imagem_url, lote(preco_cents)")
@@ -73,8 +102,21 @@ export default async function EventosPage({ searchParams }) {
   }
   if (cat) query = query.eq("categoria", cat);
   if (uf) query = query.eq("uf", uf.toUpperCase());
-  const intervalo = calcPeriodo(periodo);
-  if (intervalo) query = query.gte("data_inicio", intervalo.gte).lte("data_inicio", intervalo.lte);
+
+  // Filtro de data: padrão = só futuros; "passados" = sem filtro (todos); outros = range
+  if (periodo === "passados") {
+    // sem filtro de data — inclui todos, passados e futuros
+  } else {
+    const intervalo = calcPeriodo(periodo);
+    if (intervalo) {
+      query = query.gte("data_inicio", intervalo.gte).lte("data_inicio", intervalo.lte);
+    } else {
+      // padrão: início do dia de hoje em diante
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      query = query.gte("data_inicio", hoje.toISOString());
+    }
+  }
 
   const { data: eventos } = await query;
 
@@ -82,6 +124,9 @@ export default async function EventosPage({ searchParams }) {
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
+
+      {/* Popup de destaque — aparece ao abrir /eventos; fecha com X, ESC, backdrop */}
+      {destaqueEvento && <DestaquePopup evento={destaqueEvento} />}
 
       {/* Nav */}
       <nav style={{ background: "#fff", borderBottom: `1px solid ${T.line}` }}>
@@ -115,7 +160,7 @@ export default async function EventosPage({ searchParams }) {
               {temFiltro ? "🔍" : "📅"}
             </div>
             <p style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 8px", letterSpacing: "-0.02em" }}>
-              {temFiltro ? "Nenhum evento com esses filtros" : "Nenhum evento por enquanto"}
+              {temFiltro ? "Nenhum evento com esses filtros" : "Nenhum evento futuro por enquanto"}
             </p>
             <p style={{ fontSize: 15, color: T.muted, margin: 0, maxWidth: 380, marginInline: "auto" }}>
               {temFiltro
