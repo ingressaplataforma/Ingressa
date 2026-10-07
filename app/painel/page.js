@@ -95,6 +95,15 @@ export default async function PainelPage() {
               Configure onde receber o dinheiro das vendas.
             </p>
           </Link>
+
+          {/* Perfil público */}
+          <Link href="/painel/perfil" style={{ background: "#fff", borderRadius: 20, border: `1px solid ${T.line}`, padding: "28px 32px", textDecoration: "none", display: "block" }}>
+            <div style={{ fontSize: 28, marginBottom: 14 }}>👤</div>
+            <h2 style={{ fontFamily: fontDisplay, fontSize: 20, fontWeight: 600, color: T.ink, margin: "0 0 8px" }}>Meu perfil</h2>
+            <p style={{ fontSize: 14, color: T.muted, margin: 0 }}>
+              Bio, WhatsApp, e-mail de contato e foto.
+            </p>
+          </Link>
         </div>
       </main>
     </div>
