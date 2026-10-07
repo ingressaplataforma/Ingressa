@@ -42,9 +42,14 @@ export default function EventoCard({ ev }) {
         display: "flex",
         flexDirection: "column",
       }}>
-        <div style={{ position: "relative", width: "100%", height: 200, overflow: "hidden", background: ev.imagem_url ? "#000" : gradiente(ev.id), flexShrink: 0 }}>
+        <div style={{ position: "relative", width: "100%", height: 200, overflow: "hidden", background: gradiente(ev.id), flexShrink: 0 }}>
           {ev.imagem_url ? (
-            <img src={ev.imagem_url} alt={ev.titulo} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <img
+              src={ev.imagem_url}
+              alt={ev.titulo}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
           ) : (
             <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "flex-end", padding: "14px 16px" }}>
               <span style={{ fontFamily: fontDisplay, fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.6)", lineHeight: 1.3 }}>

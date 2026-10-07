@@ -1,49 +1,52 @@
 -- =============================================================
 -- Ingressa — Script 019b: correção do bug na geração de slug
 --
--- Bug: lower() era aplicado DEPOIS do regexp que remove [^a-z0-9\s-],
--- então letras maiúsculas (I, P, E...) eram deletadas antes de serem
--- convertidas. Além disso, o translate() manual tinha off-by-one
--- (6 'a's para 5 variantes de á), mapeando é→a em nomes com acento.
+-- Bug: lower() envolvia todo o regexp_replace, mas o PRIMEIRO
+-- regexp_replace('[^a-z0-9\s-]') rodava sobre o resultado do
+-- translate() que preserva maiúsculas. Como o regex só aceita
+-- a-z minúsculo, toda letra maiúscula (I, P, E...) era removida
+-- antes do lower() rodar.
 --
--- Fix: usar unaccent() + lower() ANTES do regexp de limpeza.
+-- Fix: lower() agora envolve apenas o translate(), e os regexp_replace
+-- operam sobre texto já minúsculo.
 --
 -- RODAR NO SUPABASE SQL EDITOR após o script 019.
 -- =============================================================
 
 -- -----------------------------------------------------------
--- 1. Habilitar extensão unaccent (idempotente)
--- -----------------------------------------------------------
-CREATE EXTENSION IF NOT EXISTS unaccent;
-
--- -----------------------------------------------------------
--- 2. Substituir a função com a versão corrigida
+-- 1. Substituir a função com a versão corrigida
 -- -----------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.gerar_slug_organizador(
   p_nome       text,
-  p_excluir_id uuid DEFAULT NULL
+  p_excluir_id uuid DEFAULT NULL::uuid
 )
 RETURNS text
 LANGUAGE plpgsql
-AS $$
+AS $function$
 DECLARE
   base_slug text;
   candidate text;
   sufixo    int := 0;
 BEGIN
-  -- Normalizar: unaccent → lower → manter só [a-z0-9] e espaços → colapsar hífens
-  base_slug := trim(both '-' from
+  -- Correto: lower() ANTES dos regexp_replace, só em volta do translate()
+  -- FROM: 24 chars de acentos (5 a-variants, 4 e, 4 i, 5 o, 4 u, c, n × 2)
+  -- TO  : 24 chars correspondentes em minúsculo
+  base_slug := regexp_replace(
     regexp_replace(
-      regexp_replace(
-        lower(unaccent(p_nome)),
-        '[^a-z0-9\s\-]', '', 'g'   -- remove chars especiais (após lower, maiúsculas já foram convertidas)
+      lower(
+        translate(
+          p_nome,
+          'áàãâäéèêëíìîïóòõôöúùûüçñÁÀÃÂÄÉÈÊËÍÌÎÏÓÒÕÔÖÚÙÛÜÇÑ',
+          'aaaaaeeeeiiiioooouuuucnaaaaaeeeeiiiioooouuuucn'
+        )
       ),
-      '[\s\-]+', '-', 'g'          -- espaços/hífens múltiplos → único -
-    )
+      '[^a-z0-9\s\-]', '', 'g'
+    ),
+    '[\s\-]+', '-', 'g'
   );
+  base_slug := trim(both '-' from base_slug);
   IF base_slug = '' THEN base_slug := 'org'; END IF;
 
-  -- Garantir unicidade (sufixar com -2, -3... em colisão)
   candidate := base_slug;
   LOOP
     IF NOT EXISTS (
@@ -57,11 +60,10 @@ BEGIN
     candidate := base_slug || '-' || sufixo;
   END LOOP;
 END;
-$$;
+$function$;
 
 -- -----------------------------------------------------------
--- 3. Atualizar a trigger function para usar a versão corrigida
---    (o corpo é idêntico — só garante que está atualizado)
+-- 2. Atualizar a trigger function (corpo idêntico, garante sync)
 -- -----------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.trg_fn_slug_organizador()
 RETURNS TRIGGER
@@ -76,45 +78,30 @@ END;
 $$;
 
 -- -----------------------------------------------------------
--- 4. Recalcular todos os slugs existentes
---    a. Zerar para NULL (índice UNIQUE permite múltiplos NULLs)
---    b. Re-popular com a função corrigida
+-- 3. Recalcular TODOS os slugs (inclusive os já preenchidos com bug)
+--    Removemos o índice único temporariamente para evitar conflitos
+--    durante o UPDATE em lote, depois recriamos.
 -- -----------------------------------------------------------
-
--- Remover índice único temporariamente para poder zerar sem conflito
 DROP INDEX IF EXISTS organizador_slug_key;
 
--- Zerar todos os slugs
-UPDATE public.organizador SET slug = NULL;
+UPDATE public.organizador o
+SET slug = public.gerar_slug_organizador(o.nome, o.id);
 
--- Re-popular com a função corrigida (mesma lógica do backfill do 019)
-DO $$
-DECLARE
-  rec RECORD;
-BEGIN
-  FOR rec IN
-    SELECT id, nome FROM public.organizador ORDER BY criado_em
-  LOOP
-    UPDATE public.organizador
-    SET slug = public.gerar_slug_organizador(rec.nome, rec.id)
-    WHERE id = rec.id;
-  END LOOP;
-END;
-$$;
-
--- Recriar índice único
 CREATE UNIQUE INDEX organizador_slug_key ON public.organizador (slug);
 
 -- -----------------------------------------------------------
 -- Verificações após rodar:
 --
--- "Ingressa Plataforma de Eventos e Ingressos" deve virar
--- "ingressa-plataforma-de-eventos-e-ingressos":
---   SELECT nome, slug FROM organizador;
+-- 1. Testar a função isolada — deve retornar exatamente
+--    'ingressa-plataforma-de-eventos-e-ingressos':
+--      SELECT gerar_slug_organizador('Ingressa Plataforma de Eventos e Ingressos');
 --
--- Nenhum duplicado:
---   SELECT slug, COUNT(*) FROM organizador GROUP BY slug HAVING COUNT(*) > 1;
+-- 2. Ver todos os slugs gerados:
+--      SELECT nome, slug FROM organizador;
 --
--- Nenhum nulo:
---   SELECT COUNT(*) FROM organizador WHERE slug IS NULL;
+-- 3. Sem duplicados:
+--      SELECT slug, COUNT(*) FROM organizador GROUP BY slug HAVING COUNT(*) > 1;
+--
+-- 4. Sem nulos:
+--      SELECT COUNT(*) FROM organizador WHERE slug IS NULL;
 -- -----------------------------------------------------------
