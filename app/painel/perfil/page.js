@@ -14,7 +14,7 @@ export default async function PerfilPage() {
 
   const { data: org } = await supabase
     .from("organizador")
-    .select("nome, bio, whatsapp, email_contato, foto_url")
+    .select("nome, bio, whatsapp, email_contato, foto_url, slug")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -45,9 +45,15 @@ export default async function PerfilPage() {
 
         <div style={{ marginTop: 24, padding: "16px 20px", background: T.panel, borderRadius: 12, fontSize: 14, color: T.muted, lineHeight: 1.5 }}>
           <strong style={{ color: T.ink2 }}>Sua página pública:</strong>{" "}
-          <Link href={`/organizador/${user.id}`} target="_blank" style={{ color: T.coral, textDecoration: "none" }}>
-            /organizador/{user.id.slice(0, 8)}…
-          </Link>
+          {org.slug ? (
+            <Link href={`/organizador/${org.slug}`} target="_blank" style={{ color: T.coral, textDecoration: "none" }}>
+              /organizador/{org.slug}
+            </Link>
+          ) : (
+            <Link href={`/organizador/${user.id}`} target="_blank" style={{ color: T.coral, textDecoration: "none" }}>
+              /organizador/{user.id.slice(0, 8)}…
+            </Link>
+          )}
         </div>
       </main>
     </div>

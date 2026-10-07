@@ -7,15 +7,21 @@ import EventoCard from "@/app/components/EventoCard";
 const fontDisplay = "var(--font-display), Georgia, serif";
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
+// UUID v4 pattern (fallback: links antigos usavam o UUID)
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function OrganizadorPage({ params }) {
-  const { id } = await params;
+  const { slug } = await params;
   const supabase = await createClient();
 
-  const { data: org } = await supabase
+  // Tenta por slug amigável; se parecer UUID, tenta também por id
+  let query = supabase
     .from("organizador_publico")
-    .select("id, nome, bio, foto_url, whatsapp, email_contato")
-    .eq("id", id)
-    .maybeSingle();
+    .select("id, nome, bio, foto_url, whatsapp, email_contato, slug");
+
+  const { data: org } = UUID_RE.test(slug)
+    ? await query.or(`slug.eq.${slug},id.eq.${slug}`).maybeSingle()
+    : await query.eq("slug", slug).maybeSingle();
 
   if (!org) notFound();
 
@@ -25,7 +31,7 @@ export default async function OrganizadorPage({ params }) {
   const { data: eventos } = await supabase
     .from("evento")
     .select("id, titulo, descricao, local_nome, uf, categoria, data_inicio, slug, imagem_url, lote(preco_cents)")
-    .eq("organizador_id", id)
+    .eq("organizador_id", org.id)
     .eq("status", "publicado")
     .eq("visibilidade", "publico")
     .gte("data_inicio", hoje.toISOString())

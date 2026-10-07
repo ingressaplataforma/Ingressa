@@ -51,10 +51,10 @@ export default async function EventoPublicoPage({ params }) {
 
   if (!evento) notFound();
 
-  // Perfil público do organizador (whatsapp, email_contato, bio, foto_url)
+  // Perfil público do organizador (whatsapp, email_contato, bio, foto_url, slug)
   const { data: orgPublico } = await supabase
     .from("organizador_publico")
-    .select("id, nome, bio, foto_url, whatsapp, email_contato")
+    .select("id, nome, bio, foto_url, whatsapp, email_contato, slug")
     .eq("id", evento.organizador_id)
     .maybeSingle();
 
@@ -214,7 +214,8 @@ function EventoConteudo({ evento, orgPublico, fontDisplay, fontBody, recebedorCo
   const temWhatsapp = !!orgPublico?.whatsapp;
   const temEmail = !!orgPublico?.email_contato;
   const nomeOrg = orgPublico?.nome ?? evento.organizador?.nome;
-  const orgId = orgPublico?.id ?? evento.organizador_id;
+  // Usa slug amigável se disponível; fallback para UUID (links antigos funcionam)
+  const orgId = orgPublico?.slug ?? orgPublico?.id ?? evento.organizador_id;
 
   const waText = encodeURIComponent(`Olá! Tenho uma dúvida sobre o evento "${evento.titulo}".`);
   const waLink = temWhatsapp ? `https://wa.me/${orgPublico.whatsapp}?text=${waText}` : null;
