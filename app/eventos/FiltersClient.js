@@ -7,17 +7,18 @@ import { T } from "@/lib/tokens";
 
 const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 
-const fieldStyle = {
-  height: 42,
-  borderRadius: 10,
+// Base sem width:100% — cada campo define sua própria largura/flex
+const fieldBase = {
+  height: 38,
+  borderRadius: 8,
   border: `1.5px solid ${T.line}`,
-  padding: "0 13px",
-  fontSize: 14,
+  padding: "0 11px",
+  fontSize: 13,
   fontFamily: fontBody,
   color: T.ink,
   background: "#fff",
   outline: "none",
-  width: "100%",
+  minWidth: 0,
 };
 
 export default function FiltersClient({ q, cat, uf, periodo }) {
@@ -52,23 +53,24 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
         className="vitrine-filter-toggle"
         onClick={() => setFiltersOpen((o) => !o)}
         style={{
+          display: "none", // CSS override para mobile via className
           alignItems: "center",
           gap: 8,
-          height: 42,
-          padding: "0 16px",
-          borderRadius: 10,
+          height: 38,
+          padding: "0 14px",
+          borderRadius: 8,
           border: `1.5px solid ${filtersOpen ? T.ink : T.line}`,
           background: filtersOpen ? T.ink : "#fff",
           color: filtersOpen ? "#fff" : T.ink,
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 600,
           fontFamily: fontBody,
           cursor: "pointer",
-          marginBottom: 10,
+          marginBottom: 8,
           transition: "background 0.15s, color 0.15s, border-color 0.15s",
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
           <path d="M2 4h12M5 8h6M7 12h2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
         </svg>
         Filtros
@@ -79,36 +81,32 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
         )}
       </button>
 
-      {/* Painel de filtros — no desktop sempre visível, no mobile togglável */}
+      {/* Barra de filtros compacta — desktop: linha única; mobile: grid 2×2 */}
       <div
         className={`vitrine-filters-panel${filtersOpen ? " open" : ""}`}
         style={{
           display: "flex",
-          gap: 10,
           flexWrap: "wrap",
+          gap: 8,
           alignItems: "center",
-          padding: "14px 18px",
-          background: "#fff",
-          borderRadius: 14,
-          border: `1px solid ${T.line}`,
         }}
       >
-        {/* Busca por texto */}
+        {/* Busca por texto — mais larga, cresce com o espaço disponível */}
         <input
           type="search"
           defaultValue={q}
           placeholder="Buscar por nome ou local…"
           onChange={handleQ}
-          style={{ ...fieldStyle, flex: "1 1 200px", minWidth: 160 }}
+          style={{ ...fieldBase, flex: "2 1 180px" }}
         />
 
         {/* Categoria */}
         <select
           value={cat}
           onChange={(e) => update("cat", e.target.value)}
-          style={{ ...fieldStyle, flex: "0 0 auto", minWidth: 190, cursor: "pointer" }}
+          style={{ ...fieldBase, flex: "1 1 140px", cursor: "pointer" }}
         >
-          <option value="">Todas as categorias</option>
+          <option value="">Categoria</option>
           {CATEGORIAS.map((c) => (
             <option key={c.value} value={c.value}>{c.label}</option>
           ))}
@@ -118,9 +116,9 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
         <select
           value={uf}
           onChange={(e) => update("uf", e.target.value)}
-          style={{ ...fieldStyle, flex: "0 0 auto", minWidth: 190, cursor: "pointer" }}
+          style={{ ...fieldBase, flex: "1 1 120px", cursor: "pointer" }}
         >
-          <option value="">Todos os estados</option>
+          <option value="">Estado</option>
           {UFS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
           ))}
@@ -130,12 +128,12 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
         <select
           value={periodo}
           onChange={(e) => update("periodo", e.target.value)}
-          style={{ ...fieldStyle, flex: "0 0 auto", minWidth: 160, cursor: "pointer" }}
+          style={{ ...fieldBase, flex: "1 1 130px", cursor: "pointer" }}
         >
-          <option value="">Próximos eventos</option>
-          <option value="7d">Próximos 7 dias</option>
+          <option value="">Próximos</option>
+          <option value="7d">Próx. 7 dias</option>
           <option value="mes">Este mês</option>
-          <option value="prox_mes">Próximo mês</option>
+          <option value="prox_mes">Próx. mês</option>
           <option value="passados">Incluir passados</option>
         </select>
 
@@ -144,19 +142,20 @@ export default function FiltersClient({ q, cat, uf, periodo }) {
           <button
             onClick={() => router.push(pathname)}
             style={{
-              height: 42,
-              padding: "0 14px",
-              borderRadius: 10,
+              height: 38,
+              padding: "0 12px",
+              borderRadius: 8,
               border: `1.5px solid ${T.line}`,
               background: "transparent",
               color: T.muted,
-              fontSize: 13,
+              fontSize: 12,
               fontFamily: fontBody,
               cursor: "pointer",
               whiteSpace: "nowrap",
+              flexShrink: 0,
             }}
           >
-            Limpar filtros
+            Limpar
           </button>
         )}
       </div>
