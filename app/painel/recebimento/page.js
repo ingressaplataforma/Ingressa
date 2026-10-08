@@ -21,6 +21,7 @@ export default async function RecebimentoPage() {
   if (!org) redirect("/completar-cadastro");
 
   const configurado = !!org.gateway_recipient_id;
+  const isSandbox = (process.env.ASAAS_BASE_URL ?? "").includes("sandbox");
 
   return (
     <div style={{ minHeight: "100vh", background: T.surface, fontFamily: fontBody }}>
@@ -60,11 +61,18 @@ export default async function RecebimentoPage() {
           </div>
         ) : (
           <>
-            <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 12, padding: "14px 18px", marginBottom: 28, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
-              <strong>Sandbox (testes).</strong> Os dados abaixo são fictícios e servem apenas para testar o fluxo.
-              Em produção, usar CPF/CNPJ e dados bancários reais do organizador.
-              {/* R$ 12,90 cobrado pelo Asaas por subconta — plataforma absorve por ora. */}
-            </div>
+            {isSandbox ? (
+              <div style={{ background: "#FFF8EC", border: "1px solid #F5C842", borderRadius: 12, padding: "14px 18px", marginBottom: 28, fontSize: 14, color: "#7A5C00", lineHeight: 1.5 }}>
+                <strong>Sandbox (testes).</strong> Os dados abaixo são fictícios e servem apenas para testar o fluxo.
+                Em produção, use CPF/CNPJ e dados bancários reais.
+                {/* R$ 12,90 cobrado pelo Asaas por subconta — plataforma absorve por ora. */}
+              </div>
+            ) : (
+              <div style={{ background: `${T.mint}18`, border: `1px solid ${T.mint}`, borderRadius: 12, padding: "14px 18px", marginBottom: 28, fontSize: 14, color: T.ink2, lineHeight: 1.5 }}>
+                Seus dados são enviados com segurança ao Asaas, nosso parceiro de pagamentos, e usados
+                apenas para criar sua carteira de recebimento. A Ingressa não armazena dados bancários.
+              </div>
+            )}
 
             <FormRecebimento organizadorId={user.id} nomeAtual={org.nome} />
           </>
