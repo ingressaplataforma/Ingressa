@@ -13,10 +13,14 @@
  *   - PLANO:    ledger chave 'asaas-plano-{payment.id}'  (webhook_ativar_assinatura)
  *   - INGRESSO: ledger chave 'venda-{pedido.id}'        (confirmar_pedido_pago)
  *               FOR UPDATE no pedido evita race condition
+ *
+ * Client: service_role (não anon) — o Asaas não manda cookie de sessão, então
+ * as RPCs SECURITY DEFINER abaixo precisam rodar com privilégio de servidor,
+ * não como role `anon` do Postgres.
  */
 
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { consultarAssinatura } from "@/lib/asaas";
 import { emitirToken } from "@/lib/ingresso-token";
 import { DIAS_GRACA } from "@/lib/config-planos";
@@ -38,7 +42,14 @@ export async function POST(request) {
   }
 
   const { event, payment, subscription } = body;
-  const supabase = await createClient();
+
+  let supabase;
+  try {
+    supabase = createServiceClient();
+  } catch (err) {
+    console.error("Webhook Asaas: service client indisponível:", err.message);
+    return NextResponse.json({ erro: "Configuração do servidor incompleta" }, { status: 500 });
+  }
 
   // ── Eventos de pagamento ────────────────────────────────────────────────────
   if (payment) {
