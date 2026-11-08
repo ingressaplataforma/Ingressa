@@ -5,6 +5,7 @@ import PublicarButton from "./PublicarButton";
 import PausarButton from "./PausarButton";
 import EditarEvento from "./EditarEvento";
 import DestaqueToggle from "./DestaqueToggle";
+import RemoverParticipante from "./RemoverParticipante";
 import { T, BRL } from "@/lib/tokens";
 
 const fontDisplay = "var(--font-display), Georgia, serif";
@@ -35,7 +36,7 @@ export default async function EventoDetalhePage({ params }) {
 
   const { data: ingressos } = await supabase
     .from("ingresso")
-    .select("id, status, criado_em, dono_nome, dono_email, lote:lote_id(nome), comprador:comprador_id(nome)")
+    .select("id, status, criado_em, dono_nome, dono_email, pedido_id, lote:lote_id(nome), comprador:comprador_id(nome)")
     .eq("evento_id", id)
     .order("criado_em", { ascending: false });
 
@@ -166,6 +167,7 @@ export default async function EventoDetalhePage({ params }) {
                     <th style={{ textAlign: "left", padding: "12px 20px", color: T.muted, fontWeight: 600, fontSize: 12 }}>LOTE</th>
                     <th style={{ textAlign: "left", padding: "12px 20px", color: T.muted, fontWeight: 600, fontSize: 12 }}>STATUS</th>
                     <th style={{ textAlign: "left", padding: "12px 20px", color: T.muted, fontWeight: 600, fontSize: 12 }}>DATA</th>
+                    <th style={{ textAlign: "right", padding: "12px 20px", color: T.muted, fontWeight: 600, fontSize: 12 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,6 +185,11 @@ export default async function EventoDetalhePage({ params }) {
                       </td>
                       <td style={{ padding: "12px 20px", color: T.muted, fontSize: 13 }}>
                         {new Date(ing.criado_em).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td style={{ padding: "12px 20px", textAlign: "right" }}>
+                        {(ing.status === "valido" || ing.status === "ativo") && (
+                          <RemoverParticipante eventoId={evento.id} ingressoId={ing.id} pago={!!ing.pedido_id} />
+                        )}
                       </td>
                     </tr>
                   ))}
