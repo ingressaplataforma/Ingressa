@@ -121,7 +121,7 @@ export async function POST(request) {
       return NextResponse.json({
         erro: compradorJaInscrito
           ? "Você já tem ingresso para este evento."
-          : `CPF já inscrito neste evento: ${cpfsConflito.join(", ")}`,
+          : "Um ou mais CPFs informados já estão inscritos neste evento.",
       }, { status: 409 });
     }
   }

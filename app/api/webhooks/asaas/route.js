@@ -20,15 +20,17 @@
  */
 
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { createServiceClient } from "@/lib/supabase/service";
 import { consultarAssinatura } from "@/lib/asaas";
 import { emitirToken } from "@/lib/ingresso-token";
 import { DIAS_GRACA } from "@/lib/config-planos";
 
 function validarTokenAsaas(request) {
-  const token = request.headers.get("asaas-access-token");
-  const esperado = process.env.ASAAS_WEBHOOK_TOKEN ?? process.env.ASAAS_API_KEY;
-  return token && token === esperado;
+  const token = request.headers.get("asaas-access-token") ?? "";
+  const esperado = process.env.ASAAS_WEBHOOK_TOKEN ?? "";
+  if (!token || !esperado || token.length !== esperado.length) return false;
+  return timingSafeEqual(Buffer.from(token), Buffer.from(esperado));
 }
 
 export async function POST(request) {
