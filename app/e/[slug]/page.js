@@ -23,13 +23,52 @@ function gradiente(id) {
 }
 
 function computeAccessToken(slug, senhaHash) {
-  const secret = process.env.INGRESSO_TOKEN_SECRET || "fallback-dev";
+  const secret = process.env.INGRESSO_TOKEN_SECRET;
+  if (!secret) {
+    throw new Error("INGRESSO_TOKEN_SECRET não configurada — obrigatória para eventos com senha.");
+  }
   return crypto.createHmac("sha256", secret).update(`ea:${slug}:${senhaHash}`).digest("hex").slice(0, 40);
 }
 
 function imagemPublicUrl(path) {
   if (!path) return null;
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/eventos/${path}`;
+}
+
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: evento } = await supabase
+    .from("evento")
+    .select("titulo, descricao, imagem_url, data_inicio, local_nome, uf")
+    .eq("slug", slug)
+    .in("status", ["publicado", "pausado"])
+    .maybeSingle();
+
+  if (!evento) return { title: "Evento não encontrado — Ingressa" };
+
+  const titulo = `${evento.titulo} — Ingressa`;
+  const descricao = evento.descricao?.slice(0, 160)
+    || `${evento.local_nome ? `${evento.local_nome}${evento.uf ? `, ${evento.uf}` : ""} · ` : ""}${new Date(evento.data_inicio).toLocaleDateString("pt-BR")}`;
+  const imagem = imagemPublicUrl(evento.imagem_url);
+
+  return {
+    title: titulo,
+    description: descricao,
+    openGraph: {
+      title: titulo,
+      description: descricao,
+      images: imagem ? [{ url: imagem }] : undefined,
+      type: "website",
+    },
+    twitter: {
+      card: imagem ? "summary_large_image" : "summary",
+      title: titulo,
+      description: descricao,
+      images: imagem ? [imagem] : undefined,
+    },
+  };
 }
 
 export default async function EventoPublicoPage({ params }) {
@@ -237,13 +276,8 @@ function EventoConteudo({ evento, orgPublico, fontDisplay, fontBody, recebedorCo
         </div>
       )}
 
-      {/* Contagem regressiva */}
-      <div style={cardStyle}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: T.muted, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Começa em
-        </p>
-        <Countdown dataInicio={evento.data_inicio} />
-      </div>
+      {/* Contagem regressiva — o card inteiro some sozinho quando o evento começa */}
+      <Countdown dataInicio={evento.data_inicio} cardStyle={cardStyle} />
 
       {/* Ocupação (quando há vagas) */}
       {totalVagas > 0 && (

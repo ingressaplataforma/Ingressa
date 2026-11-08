@@ -4,7 +4,10 @@ import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 
 function computeAccessToken(slug, senhaHash) {
-  const secret = process.env.INGRESSO_TOKEN_SECRET || "fallback-dev";
+  const secret = process.env.INGRESSO_TOKEN_SECRET;
+  if (!secret) {
+    throw new Error("INGRESSO_TOKEN_SECRET não configurada — obrigatória para eventos com senha.");
+  }
   return crypto.createHmac("sha256", secret).update(`ea:${slug}:${senhaHash}`).digest("hex").slice(0, 40);
 }
 

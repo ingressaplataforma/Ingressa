@@ -28,27 +28,31 @@ function Bloco({ valor, label }) {
   );
 }
 
-export default function Countdown({ dataInicio }) {
+export default function Countdown({ dataInicio, cardStyle }) {
   const alvo = new Date(dataInicio).getTime();
   const [restante, setRestante] = useState(() => calcRestante(alvo));
 
   useEffect(() => {
-    if (!restante) return;
     const id = setInterval(() => setRestante(calcRestante(alvo)), 1000);
     return () => clearInterval(id);
   }, [alvo]);
 
-  if (!restante) return null; // evento passado — não mostrar nada
+  if (!restante) return null; // evento já começou — some o card inteiro, não só os números
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", fontFamily: fontBody }}>
-      <Bloco valor={restante.dias} label="dias" />
-      <Separador />
-      <Bloco valor={restante.horas} label="horas" />
-      <Separador />
-      <Bloco valor={restante.minutos} label="min" />
-      <Separador />
-      <Bloco valor={restante.segundos} label="seg" />
+    <div style={cardStyle}>
+      <p style={{ fontSize: 13, fontWeight: 600, color: T.muted, margin: "0 0 12px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+        Começa em
+      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", fontFamily: fontBody }}>
+        <Bloco valor={restante.dias} label="dias" />
+        <Separador />
+        <Bloco valor={restante.horas} label="horas" />
+        <Separador />
+        <Bloco valor={restante.minutos} label="min" />
+        <Separador />
+        <Bloco valor={restante.segundos} label="seg" />
+      </div>
     </div>
   );
 }

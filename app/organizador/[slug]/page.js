@@ -10,6 +10,37 @@ const fontBody = "var(--font-body), -apple-system, system-ui, sans-serif";
 // UUID v4 pattern (fallback: links antigos usavam o UUID)
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: org } = UUID_RE.test(slug)
+    ? await supabase.from("organizador_publico").select("nome, bio, foto_url").or(`slug.eq.${slug},id.eq.${slug}`).maybeSingle()
+    : await supabase.from("organizador_publico").select("nome, bio, foto_url").eq("slug", slug).maybeSingle();
+
+  if (!org) return { title: "Organizador não encontrado — Ingressa" };
+
+  const titulo = `${org.nome} — Ingressa`;
+  const descricao = org.bio?.slice(0, 160) || `Eventos organizados por ${org.nome} na Ingressa.`;
+
+  return {
+    title: titulo,
+    description: descricao,
+    openGraph: {
+      title: titulo,
+      description: descricao,
+      images: org.foto_url ? [{ url: org.foto_url }] : undefined,
+      type: "website",
+    },
+    twitter: {
+      card: org.foto_url ? "summary_large_image" : "summary",
+      title: titulo,
+      description: descricao,
+      images: org.foto_url ? [org.foto_url] : undefined,
+    },
+  };
+}
+
 export default async function OrganizadorPage({ params }) {
   const { slug } = await params;
   const supabase = await createClient();
