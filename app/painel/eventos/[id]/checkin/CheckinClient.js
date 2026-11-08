@@ -235,6 +235,7 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
   const [cameraErro, setCameraErro] = useState("");
   const [busca, setBusca] = useState("");
   const [listaLocal, setListaLocal] = useState([]);
+  const [processandoCheckout, setProcessandoCheckout] = useState(null);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -336,16 +337,16 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
         if (json.resultado === "ok") {
           r = { tipo: "ok", nome: json.nome, email: json.email, lote: json.lote };
           setPresentes((p) => p + 1);
-          // Atualiza lista local para refletir check-in sem recarregar
+          // Atualiza lista local para refletir check-in (ou reentrada) sem recarregar
           if (codigoLocal) {
-            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado" } : i));
+            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado", presente: true } : i));
           }
         } else if (json.resultado === "ja_usado") {
           const h = json.usado_em ? new Date(json.usado_em).toLocaleTimeString("pt-BR") : "—";
           r = { tipo: "ja_usado", nome: json.nome, email: json.email, lote: json.lote, usadoEm: h };
           // Sincroniza listaLocal caso estivesse desatualizado
           if (codigoLocal) {
-            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado" } : i));
+            setListaLocal((ls) => ls.map((i) => i.codigo === codigoLocal ? { ...i, status: "usado", presente: true } : i));
           }
         } else {
           r = { tipo: "invalido", motivo: json.motivo ?? "Ingresso inválido" };
@@ -453,6 +454,28 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
       streamRef.current = null;
     };
   }, [modo, processarCodigo]);
+
+  // ── Check-out (sai, mantém histórico, libera pra reentrar) ────────
+  const fazerCheckout = useCallback(async (codigo) => {
+    if (!online || processandoCheckout) return;
+    setProcessandoCheckout(codigo);
+    try {
+      const res = await fetch(`/api/eventos/${eventoId}/checkin/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(json.erro ?? "Erro ao registrar saída.");
+        return;
+      }
+      setListaLocal((ls) => ls.map((i) => i.codigo === codigo ? { ...i, presente: false } : i));
+      setPresentes((p) => Math.max(0, p - 1));
+    } finally {
+      setProcessandoCheckout(null);
+    }
+  }, [eventoId, online, processandoCheckout]);
 
   // ── Busca manual (por nome ou e-mail) ─────────────────────────────
   const buscaNorm = busca.trim().toLowerCase();
@@ -573,10 +596,30 @@ export default function CheckinClient({ eventoId, eventoTitulo }) {
                     <p style={{ fontSize: 13, color: T.muted, margin: 0 }}>{ing.lote}</p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    {ing.status === "usado" ? (
-                      <span style={{ fontSize: 12, fontWeight: 700, color: T.muted, background: T.panel, padding: "4px 10px", borderRadius: 99 }}>Já entrou</span>
-                    ) : ing.status === "cancelado" ? (
+                    {ing.status === "cancelado" ? (
                       <span style={{ fontSize: 12, fontWeight: 700, color: "#C0392B", background: "#FFF0F0", padding: "4px 10px", borderRadius: 99 }}>Cancelado</span>
+                    ) : ing.status === "usado" && ing.presente ? (
+                      <>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "#00734F", background: "#E8FBF4", padding: "4px 10px", borderRadius: 99 }}>Dentro</span>
+                        <button
+                          onClick={() => fazerCheckout(ing.codigo)}
+                          disabled={!online || processandoCheckout === ing.codigo}
+                          style={{ padding: "8px 14px", background: "transparent", color: "#7A5C00", border: "1px solid #F5C842", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: !online || processandoCheckout === ing.codigo ? "not-allowed" : "pointer", fontFamily: fontBody, opacity: !online || processandoCheckout === ing.codigo ? 0.5 : 1 }}
+                        >
+                          {processandoCheckout === ing.codigo ? "..." : "Check-out"}
+                        </button>
+                      </>
+                    ) : ing.status === "usado" && !ing.presente ? (
+                      <>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: T.muted, background: T.panel, padding: "4px 10px", borderRadius: 99 }}>Saiu</span>
+                        <button
+                          onClick={() => processarCodigo(ing.codigo, false)}
+                          disabled={carregando || !online}
+                          style={{ padding: "8px 18px", background: carregando || !online ? T.muted : T.mint, color: "#fff", border: "none", borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: carregando || !online ? "not-allowed" : "pointer", fontFamily: fontBody }}
+                        >
+                          Check-in
+                        </button>
+                      </>
                     ) : (
                       <button
                         onClick={() => processarCodigo(ing.codigo, false)}

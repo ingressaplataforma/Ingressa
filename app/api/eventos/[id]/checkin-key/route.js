@@ -23,7 +23,7 @@ export async function GET(request, { params }) {
   // Busca ingressos com nome, email e lote (para cache offline e busca manual)
   const { data: ingressos } = await supabase
     .from("ingresso")
-    .select("codigo, status, usado_em, dono_nome, dono_email, lote:lote_id(nome), comprador:comprador_id(nome, email)")
+    .select("codigo, status, presente, usado_em, dono_nome, dono_email, lote:lote_id(nome), comprador:comprador_id(nome, email)")
     .eq("evento_id", id)
     .order("criado_em", { ascending: true });
 
@@ -33,11 +33,12 @@ export async function GET(request, { params }) {
     email: ing.dono_email ?? ing.comprador?.email ?? "",
     lote: ing.lote?.nome ?? "",
     status: ing.status,
+    presente: !!ing.presente,
     usado_em: ing.usado_em ?? null,
   }));
 
   const total = lista.length;
-  const presentes = lista.filter((i) => i.status === "usado").length;
+  const presentes = lista.filter((i) => i.presente).length;
 
   // Chave derivada por evento — nunca expõe a chave mestra
   const chaveEvento = deriveEventKeyHex(id);
